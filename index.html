@@ -282,6 +282,9 @@
                 <button onclick="switchTab('calendario')" id="tab-calendario" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2">
                     <i data-lucide="list-todo" class="w-4 h-4"></i> Calendário 
                 </button>
+                <button onclick="switchTab('ranking')" id="tab-ranking" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2 text-brand-600">
+                    <i data-lucide="trophy" class="w-4 h-4"></i> Ranking 
+                </button>
             </div>
 
             <div id="mainContent">
@@ -626,6 +629,145 @@
                     </div>
                 </div>
 
+                <!-- VIEW 4: RANKING -->
+                <div id="viewRanking" class="hidden flex-col gap-6 animate-fade-in-down">
+                    <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,2.5fr)_160px_100px_145px] gap-4 items-end">
+                            <div class="sm:col-span-2 md:col-span-2 xl:col-span-1">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Período de Colheita</label>
+                                <input type="text" id="startMonthRank" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Bloco</label>
+                                <select id="blockSearchRank" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleBlockChange('Rank')"><option value="">Todos</option></select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
+                                <select id="cycleSearchRank" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersRank()"><option value="">Todos</option></select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
+                                <select id="cropTypeRank" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleCropChange('Rank')"><option value="">Todas</option></select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
+                                <select id="varietySearchRank" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersRank()"><option value="">Todas</option></select>
+                            </div>
+                            <div class="sm:col-span-2 md:col-span-2 xl:col-span-1 relative" id="customStatusDropdownRank">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
+                                <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer h-[38px] flex justify-between items-center" onclick="toggleStatusDropdown('Rank')"><span id="statusSelectedTextRank" class="truncate">Concluído</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0 ml-2"></i></div>
+                                <div id="statusMenuRank" class="hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border rounded-2xl shadow-float p-2 overflow-hidden">
+                                    <div class="max-h-60 overflow-y-auto">
+                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Rank" value="Concluído" checked onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold">Concluído</span></label>
+                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Rank" value="Perda total" onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold">Perda total</span></label>
+                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Rank" value="Pendente" onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold">Pendente</span></label>
+                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Rank" value="Em andamento" onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold">Em andamento</span></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearFilters('Rank')" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
+                                <i data-lucide="eraser" class="w-4 h-4"></i> Limpar
+                            </button>
+                            <button type="button" onclick="fetchData()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cards de Destaque Pódio -->
+                    <div class="print-hide grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                        <div class="bg-gradient-to-br from-emerald-500 to-emerald-700 p-5 sm:p-6 rounded-[24px] text-white flex flex-col justify-between relative overflow-hidden shadow-soft border border-emerald-400/50">
+                            <i data-lucide="medal" class="absolute -right-4 -bottom-4 w-24 h-24 text-white opacity-20"></i>
+                            <span class="text-[11px] font-bold text-emerald-100 uppercase tracking-widest relative z-10 flex items-center gap-2"><i data-lucide="trending-up" class="w-4 h-4"></i> Campeão de Aproveitamento</span>
+                            <div class="relative z-10 mt-4">
+                                <h3 id="rankBestAprovName" class="text-xl font-black truncate leading-tight">--</h3>
+                                <p id="rankBestAprovInfo" class="text-xs text-emerald-200 mt-1 font-semibold">--</p>
+                            </div>
+                            <div class="mt-4 flex items-end gap-1 relative z-10">
+                                <span id="rankBestAprovVal" class="text-4xl font-black">0%</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-brand-500 to-brand-700 p-5 sm:p-6 rounded-[24px] text-white flex flex-col justify-between relative overflow-hidden shadow-soft border border-brand-400/50">
+                            <i data-lucide="scale" class="absolute -right-4 -bottom-4 w-24 h-24 text-white opacity-20"></i>
+                            <span class="text-[11px] font-bold text-brand-100 uppercase tracking-widest relative z-10 flex items-center gap-2"><i data-lucide="star" class="w-4 h-4"></i> Maior Peso Médio</span>
+                            <div class="relative z-10 mt-4">
+                                <h3 id="rankBestPesoName" class="text-xl font-black truncate leading-tight">--</h3>
+                                <p id="rankBestPesoInfo" class="text-xs text-brand-200 mt-1 font-semibold">--</p>
+                            </div>
+                            <div class="mt-4 flex items-end gap-1 relative z-10">
+                                <span id="rankBestPesoVal" class="text-4xl font-black">0</span><span class="text-sm text-brand-200 font-bold mb-1">g/un</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-amber-500 to-amber-700 p-5 sm:p-6 rounded-[24px] text-white flex flex-col justify-between relative overflow-hidden shadow-soft border border-amber-400/50">
+                            <i data-lucide="boxes" class="absolute -right-4 -bottom-4 w-24 h-24 text-white opacity-20"></i>
+                            <span class="text-[11px] font-bold text-amber-100 uppercase tracking-widest relative z-10 flex items-center gap-2"><i data-lucide="crown" class="w-4 h-4"></i> Maior Volume Total</span>
+                            <div class="relative z-10 mt-4">
+                                <h3 id="rankBestVolName" class="text-xl font-black truncate leading-tight">--</h3>
+                                <p id="rankBestVolInfo" class="text-xs text-amber-200 mt-1 font-semibold">--</p>
+                            </div>
+                            <div class="mt-4 flex items-end gap-1 relative z-10">
+                                <span id="rankBestVolVal" class="text-4xl font-black">0</span><span class="text-sm text-amber-200 font-bold mb-1">kg</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos Ranking -->
+                    <div class="print-hide grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+                        <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col h-[320px]">
+                            <h3 class="text-sm font-black text-slate-800 mb-4 uppercase">TOP 5 APROVEITAMENTO (%)</h3>
+                            <div class="flex-1 relative w-full"><canvas id="rankAprovChart"></canvas></div>
+                        </div>
+                        <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col h-[320px]">
+                            <h3 class="text-sm font-black text-slate-800 mb-4 uppercase">TOP 5 PESO MÉDIO (g)</h3>
+                            <div class="flex-1 relative w-full"><canvas id="rankPesoChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- Listas Completas Top 10 -->
+                    <div class="print-hide grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                        <!-- Top 10 Melhores Aproveitamentos -->
+                        <div class="bg-white rounded-[24px] shadow-soft border border-slate-100 overflow-hidden flex flex-col">
+                            <div class="p-4 border-b bg-emerald-50/50 flex items-center gap-2">
+                                <i data-lucide="arrow-up-circle" class="w-5 h-5 text-emerald-600"></i>
+                                <h3 class="text-sm font-black uppercase text-emerald-900">Top 10 Melhores Aprov.</h3>
+                            </div>
+                            <div class="overflow-y-auto max-h-[400px]">
+                                <table class="w-full text-left">
+                                    <tbody id="rankTopAprovBody" class="text-sm divide-y divide-slate-50"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Top 10 Piores Aproveitamentos -->
+                        <div class="bg-white rounded-[24px] shadow-soft border border-slate-100 overflow-hidden flex flex-col">
+                            <div class="p-4 border-b bg-rose-50/50 flex items-center gap-2">
+                                <i data-lucide="arrow-down-circle" class="w-5 h-5 text-rose-600"></i>
+                                <h3 class="text-sm font-black uppercase text-rose-900">10 Piores Aprov. (Atenção)</h3>
+                            </div>
+                            <div class="overflow-y-auto max-h-[400px]">
+                                <table class="w-full text-left">
+                                    <tbody id="rankWorstAprovBody" class="text-sm divide-y divide-slate-50"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Top 10 Pesos Medios -->
+                        <div class="bg-white rounded-[24px] shadow-soft border border-slate-100 overflow-hidden flex flex-col">
+                            <div class="p-4 border-b bg-brand-50/50 flex items-center gap-2">
+                                <i data-lucide="weight" class="w-5 h-5 text-brand-600"></i>
+                                <h3 class="text-sm font-black uppercase text-brand-900">Top 10 Maiores Pesos</h3>
+                            </div>
+                            <div class="overflow-y-auto max-h-[400px]">
+                                <table class="w-full text-left">
+                                    <tbody id="rankTopPesoBody" class="text-sm divide-y divide-slate-50"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -651,7 +793,7 @@
         let allVarieties = new Set();
         let allBlocks = new Set();
         let allCycles = new Set();
-        let lastProcessedData = { prev: null, prod: null, cal: null }; 
+        let lastProcessedData = { prev: null, prod: null, cal: null, rank: null }; 
         const nomesDosMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
         Chart.register(ChartDataLabels);
@@ -815,6 +957,7 @@
                             if (id === 'startMonthPrev') applyFiltersPrev();
                             else if (id === 'startMonthProd') applyFiltersProd();
                             else if (id === 'startMonthCal') applyFiltersCal();
+                            else if (id === 'startMonthRank') applyFiltersRank();
                             instance.close();
                         }
                     };
@@ -841,9 +984,10 @@
             if (document.getElementById('startMonthPrev')) document.getElementById('startMonthPrev').value = "";
             if (document.getElementById('startMonthProd')) document.getElementById('startMonthProd').value = "";
             if (document.getElementById('startMonthCal')) document.getElementById('startMonthCal').value = "";
+            if (document.getElementById('startMonthRank')) document.getElementById('startMonthRank').value = "";
             
             document.addEventListener('click', (e) => {
-                ['Prev', 'Prod', 'Cal'].forEach(tab => {
+                ['Prev', 'Prod', 'Cal', 'Rank'].forEach(tab => {
                     const drop = document.getElementById('customStatusDropdown' + tab);
                     const menu = document.getElementById('statusMenu' + tab);
                     if (drop && menu && !drop.contains(e.target)) menu.classList.add('hidden');
@@ -860,7 +1004,7 @@
                 buildFilterMaps(cachedApiData);
                 populateFilterDropdowns();
                 
-                ['Prev', 'Prod', 'Cal'].forEach(tab => {
+                ['Prev', 'Prod', 'Cal', 'Rank'].forEach(tab => {
                     const cropDrop = document.getElementById('cropType' + tab);
                     if (cropDrop && cropDrop.value === "") {
                         const brocolisOpt = Array.from(cropDrop.options).find(o => o.value.toUpperCase().includes('BRÓCOLIS') || o.value.toUpperCase() === 'BROCOLIS');
@@ -868,9 +1012,9 @@
                     }
                 });
 
-                ['Prev', 'Prod', 'Cal'].forEach(updateVarietyDropdownForTab);
-                ['Prev', 'Prod', 'Cal'].forEach(updateCycleDropdownForTab);
-                applyFiltersPrev(); applyFiltersProd(); applyFiltersCal();
+                ['Prev', 'Prod', 'Cal', 'Rank'].forEach(updateVarietyDropdownForTab);
+                ['Prev', 'Prod', 'Cal', 'Rank'].forEach(updateCycleDropdownForTab);
+                applyFiltersPrev(); applyFiltersProd(); applyFiltersCal(); applyFiltersRank();
             } catch (err) {
                 console.error("Erro na busca de dados:", err);
             } finally {
@@ -879,14 +1023,15 @@
         }
 
         function switchTab(tabName) {
-            ['previsao', 'produtividade', 'calendario'].forEach(t => {
+            ['previsao', 'produtividade', 'calendario', 'ranking'].forEach(t => {
                 const btn = document.getElementById('tab-' + t);
                 const view = document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1));
                 if (t === tabName) {
-                    btn.className = "tab-btn active pb-3 text-sm uppercase tracking-wider flex items-center gap-2";
+                    btn.classList.add('active'); btn.classList.remove('inactive');
+                    if (t === 'ranking') btn.classList.add('text-brand-600');
                     view.classList.remove('hidden'); view.classList.add('flex');
                 } else {
-                    btn.className = "tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2";
+                    btn.classList.remove('active', 'text-brand-600'); btn.classList.add('inactive');
                     view.classList.add('hidden'); view.classList.remove('flex');
                 }
             });
@@ -935,7 +1080,7 @@
 
         function populateFilterDropdowns() {
             const sortedCrops = Array.from(allCrops).sort();
-            ['Prev', 'Prod', 'Cal'].forEach(tab => {
+            ['Prev', 'Prod', 'Cal', 'Rank'].forEach(tab => {
                 const drop = document.getElementById('cropType' + tab);
                 if (drop) {
                     const current = drop.value;
@@ -948,7 +1093,7 @@
                 }
             });
             const sortedBlocks = Array.from(allBlocks).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-            ['Prev', 'Prod', 'Cal'].forEach(tab => {
+            ['Prev', 'Prod', 'Cal', 'Rank'].forEach(tab => {
                 const drop = document.getElementById('blockSearch' + tab);
                 if (drop) {
                     const current = drop.value;
@@ -983,7 +1128,8 @@
             updateCycleDropdownForTab(tab);
             if (tab === 'Prev') applyFiltersPrev();
             else if (tab === 'Prod') applyFiltersProd();
-            else applyFiltersCal();
+            else if (tab === 'Cal') applyFiltersCal();
+            else if (tab === 'Rank') applyFiltersRank();
         }
 
         function updateVarietyDropdownForTab(tab) {
@@ -1007,7 +1153,8 @@
             updateVarietyDropdownForTab(tab);
             if (tab === 'Prev') applyFiltersPrev();
             else if (tab === 'Prod') applyFiltersProd();
-            else applyFiltersCal();
+            else if (tab === 'Cal') applyFiltersCal();
+            else if (tab === 'Rank') applyFiltersRank();
         }
 
         function clearFilters(tab) {
@@ -1029,15 +1176,25 @@
                 const rate = document.getElementById('deliveryRatePrev');
                 if (rate) rate.value = "50";
             }
+            
             const checkboxes = document.querySelectorAll('.status-checkbox-' + tab);
-            checkboxes.forEach(cb => cb.checked = true);
+            if (tab === 'Rank') {
+                // Ranking by default only shows Concluídos for fair comparison
+                checkboxes.forEach(cb => cb.checked = (cb.value === 'Concluído'));
+            } else {
+                checkboxes.forEach(cb => cb.checked = true);
+            }
+            
             const statusText = document.getElementById('statusSelectedText' + tab);
-            if (statusText) statusText.innerText = "Todos";
+            if (statusText) statusText.innerText = (tab === 'Rank') ? "Concluído" : "Todos";
+            
             updateCycleDropdownForTab(tab);
             updateVarietyDropdownForTab(tab);
+            
             if (tab === 'Prev') applyFiltersPrev();
             else if (tab === 'Prod') applyFiltersProd();
-            else applyFiltersCal();
+            else if (tab === 'Cal') applyFiltersCal();
+            else if (tab === 'Rank') applyFiltersRank();
         }
 
         function applyFiltersPrev() {
@@ -1079,6 +1236,19 @@
             const res = processCalendario(cachedApiData.pendentes, cachedApiData.historico, targetMonth, block, cycle, crop, variety, statuses);
             lastProcessedData.cal = res;
             updateCalendarioView(res);
+        }
+
+        function applyFiltersRank() {
+            if (!cachedApiData) return;
+            const targetMonth = document.getElementById('startMonthRank')?.value || "";
+            const block = document.getElementById('blockSearchRank')?.value || "";
+            const cycle = document.getElementById('cycleSearchRank')?.value || "";
+            const crop = document.getElementById('cropTypeRank')?.value || "";
+            const variety = document.getElementById('varietySearchRank')?.value || "";
+            const statuses = Array.from(document.querySelectorAll('.status-checkbox-Rank')).filter(cb => cb.checked).map(cb => cb.value.toLowerCase());
+            const res = processRanking(cachedApiData.historico, cachedApiData.pendentes, targetMonth, block, cycle, crop, variety, statuses);
+            lastProcessedData.rank = res;
+            updateRankingView(res);
         }
 
         function processPrevisao(hist, pend, m, bF, cyF, crF, vF, stats, rate) {
@@ -1258,6 +1428,58 @@
             return { lista: list, totalP: tPlants, totalLotes: list.length, avgCiclo: avgCiclo };
         }
 
+        function processRanking(hist, pend, m, bF, cyF, crF, vF, stats) {
+            let targetStart = null, targetEnd = null;
+            if (m) {
+                let startStr = m, endStr = m;
+                if (m.includes(' até ')) { [startStr, endStr] = m.split(' até '); }
+                else if (m.includes(' to ')) { [startStr, endStr] = m.split(' to '); }
+                else if (m.includes(' a ')) { [startStr, endStr] = m.split(' a '); }
+                targetStart = new Date(startStr + "T00:00:00");
+                targetEnd = new Date(endStr + "T23:59:59");
+            }
+            
+            const lotesMap = {}; // key: bloco|ciclo|cultura
+
+            hist.forEach(r => {
+                const d = parseGoogleDate(r.data_entrega); if(!d) return;
+                if(bF && normalizeStr(r.bloco) !== normalizeStr(bF)) return;
+                if(cyF && normalizeStr(r.ciclo) !== normalizeStr(cyF)) return;
+                if(crF && normalizeStr(r.cultura) !== normalizeStr(crF)) return;
+                if(vF && normalizeStr(r.variedade_comercial) !== normalizeStr(vF)) return;
+                
+                const bInfo = pend.find(p => normalizeStr(p.nome) === normalizeStr(r.bloco) && normalizeStr(p.ciclo) === normalizeStr(r.ciclo));
+                const st = (bInfo?.status || "pendente").toLowerCase(); if(!stats.some(s => st.includes(s))) return;
+                
+                const isMatchDate = targetStart === null || (d >= targetStart && d <= targetEnd);
+                if(isMatchDate){
+                    const k = `${normalizeStr(r.bloco)}|${normalizeStr(r.ciclo)}|${normalizeStr(r.cultura)}`;
+                    if (!lotesMap[k]) {
+                        lotesMap[k] = { bloco: r.bloco, ciclo: r.ciclo, cultura: r.cultura, variedade: r.variedade_comercial || 'Mix', un: 0, kg: 0, estimativa: 0 };
+                    }
+                    lotesMap[k].un += r.qtd_cabecas;
+                    lotesMap[k].kg += r.peso_total_kg;
+                }
+            });
+
+            pend.forEach(bl => {
+                const k = `${normalizeStr(bl.nome)}|${normalizeStr(bl.ciclo)}|${normalizeStr(bl.cultura)}`;
+                if(lotesMap[k]) {
+                    lotesMap[k].estimativa += bl.qtd_plantas;
+                }
+            });
+
+            let list = Object.values(lotesMap).filter(item => item.un > 0 && item.estimativa > 0);
+            
+            list.forEach(item => {
+                const calcP = Math.max(item.estimativa, item.un);
+                item.aprov = Math.min(100, Math.round((item.un / calcP) * 100)); // Cap to 100% logic
+                item.pMed = Math.round((item.kg / item.un) * 1000);
+            });
+
+            return list;
+        }
+
         function updatePrevisaoView(res) {
             safeSetText('historicalAvgLabel', res.nomeMesBase === "Geral" ? `Média (gr) (Geral)` : `Média (gr) do anterior (${res.nomeMesBase})`);
             safeSetText('forecastTotalLabel', `Saldo Projetado (${res.labelAlvo})`);
@@ -1344,6 +1566,72 @@
             }
         }
 
+        function updateRankingView(list) {
+            // Sort arrays
+            const topAprov = [...list].sort((a,b) => b.aprov - a.aprov || b.pMed - a.pMed);
+            const worstAprov = [...list].sort((a,b) => a.aprov - b.aprov || a.pMed - b.pMed);
+            const topPeso = [...list].sort((a,b) => b.pMed - a.pMed || b.aprov - a.aprov);
+            const topKg = [...list].sort((a,b) => b.kg - a.kg);
+
+            // Update Highlight Cards
+            if (topAprov.length > 0) {
+                safeSetText('rankBestAprovName', topAprov[0].bloco);
+                safeSetText('rankBestAprovInfo', `Ciclo ${topAprov[0].ciclo} • ${topAprov[0].cultura}`);
+                safeSetText('rankBestAprovVal', topAprov[0].aprov + '%');
+            } else {
+                safeSetText('rankBestAprovName', '--'); safeSetText('rankBestAprovInfo', '--'); safeSetText('rankBestAprovVal', '0%');
+            }
+
+            if (topPeso.length > 0) {
+                safeSetText('rankBestPesoName', topPeso[0].bloco);
+                safeSetText('rankBestPesoInfo', `Ciclo ${topPeso[0].ciclo} • ${topPeso[0].cultura}`);
+                safeSetText('rankBestPesoVal', topPeso[0].pMed);
+            } else {
+                safeSetText('rankBestPesoName', '--'); safeSetText('rankBestPesoInfo', '--'); safeSetText('rankBestPesoVal', '0');
+            }
+
+            if (topKg.length > 0) {
+                safeSetText('rankBestVolName', topKg[0].bloco);
+                safeSetText('rankBestVolInfo', `Ciclo ${topKg[0].ciclo} • ${topKg[0].cultura}`);
+                safeSetText('rankBestVolVal', Math.round(topKg[0].kg).toLocaleString('pt-BR'));
+            } else {
+                safeSetText('rankBestVolName', '--'); safeSetText('rankBestVolInfo', '--'); safeSetText('rankBestVolVal', '0');
+            }
+
+            // Fill Tables (Top 10 max)
+            const renderTable = (dataArr, tbodyId, valKey, suffix) => {
+                const tbody = document.getElementById(tbodyId);
+                if(!tbody) return;
+                tbody.innerHTML = dataArr.length === 0 ? '<tr><td colspan="3" class="p-4 text-center text-slate-400">Nenhum dado</td></tr>' : '';
+                dataArr.slice(0, 10).forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    let medalHtml = `<span class="text-slate-400 font-bold">${index + 1}º</span>`;
+                    if (index === 0) medalHtml = `<i data-lucide="medal" class="w-5 h-5 text-yellow-500"></i>`;
+                    else if (index === 1) medalHtml = `<i data-lucide="medal" class="w-5 h-5 text-slate-400"></i>`;
+                    else if (index === 2) medalHtml = `<i data-lucide="medal" class="w-5 h-5 text-amber-600"></i>`;
+
+                    tr.innerHTML = `
+                        <td class="p-3 w-10 text-center">${medalHtml}</td>
+                        <td class="p-3"><div class="font-black text-slate-800 text-xs">${item.bloco}</div><div class="text-[9px] text-slate-500">C${item.ciclo} • ${item.cultura}</div></td>
+                        <td class="p-3 text-right font-black text-slate-700 text-sm">${item[valKey].toLocaleString('pt-BR')}${suffix}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            };
+
+            renderTable(topAprov, 'rankTopAprovBody', 'aprov', '%');
+            renderTable(worstAprov, 'rankWorstAprovBody', 'aprov', '%');
+            renderTable(topPeso, 'rankTopPesoBody', 'pMed', 'g');
+            lucide.createIcons();
+
+            // Charts (Top 5 Horizontal)
+            const top5A = topAprov.slice(0, 5);
+            const top5P = topPeso.slice(0, 5);
+
+            createHorizontalBarChart('rankAprovChart', top5A.map(i => `${i.bloco} (C${i.ciclo})`), top5A.map(i => i.aprov), '#10b981', 'Aproveitamento (%)', '%');
+            createHorizontalBarChart('rankPesoChart', top5P.map(i => `${i.bloco} (C${i.ciclo})`), top5P.map(i => i.pMed), '#0ea5e9', 'Peso Médio (g)', 'g');
+        }
+
         function createGroupedBarChart(id, data) {
             const ctx = document.getElementById(id);
             if (!ctx) return;
@@ -1370,6 +1658,26 @@
                         datalabels: { display: function(context) { return plotLabels[0] !== "Sem Dados"; }, anchor: 'end', align: 'bottom', color: '#ffffff', backgroundColor: 'rgba(148, 163, 184, 0.6)', borderRadius: 4, padding: {top: 2, bottom: 2, left: 4, right: 4}, font: { weight: '800', size: 10 }, formatter: function(value) { if (!value) return ''; let formatted = isFloat ? value.toFixed(3).replace('.', ',') : Math.round(value).toLocaleString('pt-BR'); return formatted + suffix; } } 
                     }, 
                     scales: { y: { display: false }, x: { grid: { display: false }, ticks: { display: plotLabels.length > 0 } } } 
+                }
+            });
+        }
+
+        function createHorizontalBarChart(id, labels, data, color, title, suffix = '') {
+            const ctx = document.getElementById(id);
+            if (!ctx) return;
+            const ctx2d = ctx.getContext('2d'); if (charts[id]) charts[id].destroy();
+            let plotLabels = labels; let plotData = data; let plotColor = color;
+            if (labels.length === 0) { plotLabels = ["Sem Dados"]; plotData = [0]; plotColor = '#f1f5f9'; }
+            charts[id] = new Chart(ctx2d, {
+                type: 'bar', data: { labels: plotLabels, datasets: [{ label: title, data: plotData, backgroundColor: color, borderRadius: 4, barPercentage: 0.8, categoryPercentage: 0.9 }] },
+                options: { 
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', padding: 12, cornerRadius: 8 },
+                        datalabels: { display: function(context) { return plotLabels[0] !== "Sem Dados"; }, anchor: 'end', align: 'left', color: '#ffffff', backgroundColor: 'rgba(15, 23, 42, 0.4)', borderRadius: 4, padding: {top: 2, bottom: 2, left: 4, right: 4}, font: { weight: '800', size: 10 }, formatter: function(value) { return Math.round(value).toLocaleString('pt-BR') + suffix; } } 
+                    }, 
+                    scales: { x: { display: false, beginAtZero: true }, y: { grid: { display: false }, ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", weight: '700', size: 10 }, color: '#475569' } } } 
                 }
             });
         }
@@ -1404,7 +1712,7 @@
             const sel = Array.from(cbs).filter(c => c.checked).map(c => c.value);
             const label = document.getElementById('statusSelectedText' + t);
             if (label) label.innerText = sel.length === cbs.length ? "Todos" : (sel.length === 0 ? "Nenhum" : sel.length + " selecionados");
-            if(t === 'Prev') applyFiltersPrev(); else if(t === 'Prod') applyFiltersProd(); else applyFiltersCal();
+            if(t === 'Prev') applyFiltersPrev(); else if(t === 'Prod') applyFiltersProd(); else if(t === 'Cal') applyFiltersCal(); else if(t === 'Rank') applyFiltersRank();
         }
 
         // Função para construir o Relatório Industrial e acionar a impressão
@@ -1422,6 +1730,9 @@
             } else if (!document.getElementById('viewCalendario').classList.contains('hidden')) {
                 activeTab = 'Cal';
                 reportTitle = 'Calendário de Lotes e Plantios';
+            } else if (!document.getElementById('viewRanking').classList.contains('hidden')) {
+                activeTab = 'Rank';
+                reportTitle = 'Auditoria de Performance e Ranking de Lotes';
             }
 
             const getFilterText = (id) => {
@@ -1605,6 +1916,58 @@
                     </tr>
                     ${rows || '<tr><td colspan="6" class="ind-center">Nenhum plantio encontrado.</td></tr>'}
                 </table>`;
+            } else if (activeTab === 'Rank') {
+                const list = lastProcessedData.rank;
+                const topAprov = [...list].sort((a,b) => b.aprov - a.aprov || b.pMed - a.pMed).slice(0, 10);
+                const worstAprov = [...list].sort((a,b) => a.aprov - b.aprov || a.pMed - b.pMed).slice(0, 10);
+                const topPeso = [...list].sort((a,b) => b.pMed - a.pMed || b.aprov - a.aprov).slice(0, 10);
+
+                let renderTableRows = (dataArr, valKey, suffix) => {
+                    return dataArr.map((b, i) => `
+                        <tr>
+                            <td class="ind-center">${i + 1}º</td>
+                            <td><b>${b.bloco}</b> - Ciclo ${b.ciclo} <span style="font-size:6.5pt; color:#555">(${b.cultura})</span></td>
+                            <td class="ind-right ind-bold">${b[valKey].toLocaleString('pt-BR')}${suffix}</td>
+                        </tr>
+                    `).join('');
+                };
+
+                detailHtml = `
+                <div style="display: flex; gap: 10px; align-items: flex-start; width: 100%;">
+                    <div style="width: 33.3%;">
+                        <table class="ind-table" style="margin-bottom: 0;">
+                            <tr class="ind-title-row"><td colspan="3">Melhores Aproveitamentos</td></tr>
+                            <tr class="ind-header">
+                                <th style="width: 15%">Pos</th>
+                                <th style="width: 60%">Bloco</th>
+                                <th class="ind-right" style="width: 25%">Aprov.</th>
+                            </tr>
+                            ${renderTableRows(topAprov, 'aprov', '%') || '<tr><td colspan="3" class="ind-center">Sem dados.</td></tr>'}
+                        </table>
+                    </div>
+                    <div style="width: 33.3%;">
+                        <table class="ind-table" style="margin-bottom: 0;">
+                            <tr class="ind-title-row"><td colspan="3">Piores Aproveitamentos</td></tr>
+                            <tr class="ind-header">
+                                <th style="width: 15%">Pos</th>
+                                <th style="width: 60%">Bloco</th>
+                                <th class="ind-right" style="width: 25%">Aprov.</th>
+                            </tr>
+                            ${renderTableRows(worstAprov, 'aprov', '%') || '<tr><td colspan="3" class="ind-center">Sem dados.</td></tr>'}
+                        </table>
+                    </div>
+                    <div style="width: 33.3%;">
+                        <table class="ind-table" style="margin-bottom: 0;">
+                            <tr class="ind-title-row"><td colspan="3">Maiores Pesos Médios</td></tr>
+                            <tr class="ind-header">
+                                <th style="width: 15%">Pos</th>
+                                <th style="width: 60%">Bloco</th>
+                                <th class="ind-right" style="width: 25%">Média</th>
+                            </tr>
+                            ${renderTableRows(topPeso, 'pMed', 'g') || '<tr><td colspan="3" class="ind-center">Sem dados.</td></tr>'}
+                        </table>
+                    </div>
+                </div>`;
             }
 
             const printContainer = document.getElementById('printDocumentContainer');
