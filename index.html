@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SPG Oásis | Gestão de Cultivos</title>
+    
+    <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/512/line-chart.png">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/512/line-chart.png">
+    
+    <meta name="theme-color" content="#0f172a">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 
+                            500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e',
+                        },
+                        prod: {
+                            green: '#749d83', yellow: '#e3d39e', grey: '#9ca3af', lightgreen: '#86b693'
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 40px -10px rgba(0,0,0,0.04)',
+                        'float': '0 20px 40px -10px rgba(15,23,42,0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Bibliotecas do Chart.js e Datalabels -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <!-- Bibliotecas Flatpickr para Seletor de Período -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #f8fafc; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .animate-fade-in-down { animation: fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .tab-btn { transition: all 0.3s ease; position: relative; white-space: nowrap; flex-shrink: 0; }
+        .tab-btn::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background-color: #0ea5e9; transform: scaleX(0); transition: transform 0.3s ease; border-radius: 3px 3px 0 0; }
+        .tab-btn.active::after { transform: scaleX(1); }
+        .tab-btn.active { color: #0f172a; font-weight: 800; }
+        .tab-btn.inactive { color: #64748b; font-weight: 600; }
+        .tab-btn.inactive:hover { color: #334155; }
+
+        /* --- ESTILO DATA STUDIO DATE PICKER --- */
+        .flatpickr-calendar {
+            background: #fff;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 12px !important;
+            overflow: hidden;
+            display: flex !important;
+            flex-direction: row !important;
+            width: auto !important;
+            max-width: 95vw !important;
+        }
+        
+        .flatpickr-shortcuts-sidebar {
+            width: 180px;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 6px;
+        }
+
+        .shortcut-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+        }
+
+        .shortcut-item:hover { background: #f1f5f9; color: #0ea5e9; }
+        .shortcut-item.active { background: #e0f2fe; color: #0369a1; }
+        .shortcut-item svg { width: 14px; height: 14px; opacity: 0.5; }
+
+        .calendar-main-area { display: flex; flex-direction: column; background: #fff; }
+        .flatpickr-innerContainer { padding: 0 10px; }
+        .flatpickr-months { position: relative !important; width: 100%; }
+        .flatpickr-prev-month { left: 10px !important; }
+        .flatpickr-next-month { right: 10px !important; }
+
+        .calendar-header-labels {
+            display: flex;
+            padding: 15px 20px 0 20px;
+            gap: 10px;
+            background: #fff;
+        }
+        .header-label-box { flex: 1; text-align: center; }
+        .header-label-text {
+            font-size: 11px;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .calendar-footer {
+            border-top: 1px solid #f1f5f9;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #fff;
+        }
+
+        .footer-btn { padding: 6px 16px; font-size: 13px; font-weight: 700; border-radius: 8px; transition: all 0.2s; }
+        .btn-cancel { color: #64748b; }
+        .btn-cancel:hover { background: #f1f5f9; }
+        .btn-apply { background: #0f172a; color: #fff; }
+        .btn-apply:hover { background: #1e293b; }
+
+        @media (max-width: 768px) {
+            .flatpickr-calendar { flex-direction: column !important; }
+            .flatpickr-shortcuts-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; overflow-x: auto; padding: 8px; gap: 4px; }
+            .shortcut-item { white-space: nowrap; flex-shrink: 0; margin-bottom: 0; }
+            .shortcut-item svg { display: none; }
+            .calendar-header-labels { display: none; }
+        }
+
+        /* --- ESTILOS DE IMPRESSÃO PROFISSIONAL (DOCUMENTO INDUSTRIAL) --- */
+        #printDocumentContainer { display: none; }
+        
+        @media print {
+            @page { size: A4 landscape; margin: 6mm; }
+            
+            html, body { 
+                background: #fff !important; 
+                color: #000 !important; 
+                font-family: Arial, Helvetica, sans-serif !important; 
+                height: auto !important;
+                min-height: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+            
+            body > :not(#printDocumentContainer) { display: none !important; }
+            
+            #printDocumentContainer { 
+                display: block !important; 
+                width: 100%; 
+                margin: 0 !important; 
+                padding: 0 !important;
+                page-break-inside: auto;
+            }
+            
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-shadow: none !important; border-radius: 0 !important; }
+            
+            /* Estilos compactos das Tabelas Industriais */
+            .ind-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; border: 1.5px solid #000; page-break-inside: auto; }
+            .ind-table th, .ind-table td { border: 1px solid #000; padding: 2.5px 4px !important; font-size: 7pt !important; text-align: left; color: #000; line-height: 1.1; }
+            .ind-table tr { page-break-inside: avoid; page-break-after: auto; }
+            .ind-header { background-color: #e2e8f0 !important; font-weight: bold; color: #0f172a !important; text-transform: uppercase; font-size: 7pt !important; }
+            .ind-title-row td { background-color: #cbd5e1 !important; font-weight: bold; font-size: 8pt !important; border-top: 1.5px solid #000; border-bottom: 1.5px solid #000; text-transform: uppercase; padding: 4px !important; }
+            .ind-center { text-align: center !important; }
+            .ind-right { text-align: right !important; }
+            .ind-bold { font-weight: bold !important; }
+            
+            svg.lucide { display: none !important; }
+            canvas, .chart-container { display: none !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen pb-10">
+
+    <!-- Navbar -->
+    <div class="print-hide bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-4 sm:px-6 py-4 flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center gap-3 sm:gap-4 overflow-hidden">
+            <div class="w-10 h-10 sm:w-11 sm:h-11 shrink-0 rounded-xl bg-gradient-to-tr from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
+                <i data-lucide="bar-chart-3" class="w-5 h-5 text-white"></i>
+            </div>
+            <div class="truncate">
+                <h1 class="text-sm sm:text-base font-black text-slate-900 tracking-tight truncate">SPG OÁSIS</h1>
+                <p class="text-[9px] sm:text-[11px] text-slate-500 font-bold uppercase tracking-wider truncate">Gestão de Cultivos e Produtividade</p>
+            </div>
+        </div>
+        <button onclick="prepareAndPrint()" class="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all border border-slate-200">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Imprimir Relatório</span>
+        </button>
+    </div>
+
+    <div class="container mx-auto p-4 md:p-6 flex flex-col gap-6 max-w-[1400px]">
+        
+        <!-- ABAS DE NAVEGAÇÃO -->
+        <div class="print-hide flex gap-6 sm:gap-8 border-b border-slate-200/80 px-2 overflow-x-auto hide-scrollbar pb-1">
+            <button onclick="switchTab('previsao')" id="tab-previsao" class="tab-btn active pb-3 text-sm uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="calendar-days" class="w-4 h-4"></i> Previsões 
+            </button>
+            <button onclick="switchTab('produtividade')" id="tab-produtividade" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Produtividade 
+            </button>
+            <button onclick="switchTab('calendario')" id="tab-calendario" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="list-todo" class="w-4 h-4"></i> Calendário 
+            </button>
+        </div>
+
+        <div id="mainContent">
+            
+            <!-- VIEW 1: PREVISÕES -->
+            <div id="viewPrevisao" class="flex flex-col gap-6 animate-fade-in-down">
+                
+                <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,2.5fr)_160px_80px_100px_145px] gap-4 items-end">
+                        <div class="sm:col-span-2 md:col-span-2 xl:col-span-1">
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Período</label>
+                            <input type="text" id="startMonthPrev" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm outline-none font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Bloco</label>
+                            <select id="blockSearchPrev" class="w-full p-2 border border-slate-200 rounded-xl text-sm outline-none font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleBlockChange('Prev')">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
+                            <select id="cycleSearchPrev" class="w-full p-2 border border-slate-200 rounded-xl text-sm outline-none font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersPrev()">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
+                            <select id="cropTypePrev" class="w-full p-2 border border-slate-200 rounded-xl text-sm outline-none font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleCropChange('Prev')">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
+                            <select id="varietySearchPrev" class="w-full p-2 border border-slate-200 rounded-xl text-sm outline-none font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersPrev()">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2 md:col-span-2 xl:col-span-1 relative" id="customStatusDropdownPrev">
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
+                            <div class="w-full p-2 border border-slate-200 rounded-xl text-sm bg-white outline-none font-semibold cursor-pointer flex justify-between items-center h-[38px]" onclick="toggleStatusDropdown('Prev')">
+                                <span id="statusSelectedTextPrev" class="truncate">Todos</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0 ml-2"></i>
+                            </div>
+                            <div id="statusMenuPrev" class="hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float top-full left-0 overflow-hidden">
+                                <div class="max-h-60 overflow-y-auto p-2" id="statusOptionsListPrev">
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
+                                        <input type="checkbox" value="Concluído" class="status-checkbox-Prev" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold">Concluído</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
+                                        <input type="checkbox" value="Perda total" class="status-checkbox-Prev" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold">Perda total</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
+                                        <input type="checkbox" value="Pendente" class="status-checkbox-Prev" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold">Pendente</span>
+                                    </label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
+                                        <input type="checkbox" value="Em andamento" class="status-checkbox-Prev" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold">Em andamento</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Aproveit. (%)</label>
+                            <input type="number" id="deliveryRatePrev" value="50" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50" oninput="applyFiltersPrev()">
+                        </div>
+                        <button type="button" onclick="clearFilters('Prev')" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
+                            <i data-lucide="eraser" class="w-4 h-4"></i> Limpar
+                        </button>
+                        <button type="button" onclick="fetchData()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CARDS DE RESUMO PREVISÃO -->
+                <div class="print-hide grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+                    <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col justify-between">
+                        <span id="historicalAvgLabel" class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Média (gr) do anterior</span>
+                        <div class="flex items-end gap-2"><span id="historicalAvg" class="text-4xl font-black text-slate-800">0</span><span class="text-sm text-slate-400">g/cab.</span></div>
+                        <div class="text-xs font-bold text-brand-600 bg-brand-50 px-3 py-1.5 rounded-lg inline-block w-fit mt-2">Ritmo: <span id="historicalPace">0</span> un/dia</div>
+                    </div>
+                    <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col justify-center">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Realizado</span>
+                        <div class="flex items-center gap-2"><span id="deliveredUnits" class="text-4xl font-black text-slate-800">0</span><span class="text-sm text-slate-400">un</span></div>
+                        <div class="mt-2 text-[11px] font-medium text-slate-500 border-t pt-2"><span id="deliveredKg" class="font-bold">0</span> kg | Média: <span id="deliveredAvg" class="font-bold">0</span> g</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-5 sm:p-6 rounded-[24px] text-white flex flex-col justify-between relative overflow-hidden">
+                        <span id="forecastTotalLabel" class="text-[11px] font-bold text-slate-300 uppercase tracking-widest relative z-10">Saldo Projetado (Kg)</span>
+                        <div class="flex items-end gap-2 relative z-10"><span id="forecastTotal" class="text-4xl font-black">0</span><span class="text-sm text-slate-300">kg</span></div>
+                        <div class="mt-2 text-[10px] text-slate-400 border-t border-slate-700 pt-2 relative z-10">Realizado: <span class="text-white" id="subForecastDeliveredKg">0</span> kg</div>
+                    </div>
+                    <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col justify-between">
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Saldo Projetado (Un)</span>
+                        <div class="flex items-center gap-2"><span id="pendingPlants" class="text-4xl font-black text-slate-800">0</span><span class="text-sm text-slate-400">un</span></div>
+                        <div class="mt-2 text-[10px] text-slate-400 border-t pt-2 flex justify-between">
+                            <span>Realizado: <span id="subForecastDeliveredUn" class="font-bold text-slate-700">0</span> un</span>
+                            <span>Campo: <span id="fieldPlantsTotal" class="font-bold text-slate-700">0</span> un</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos -->
+                <div class="print-hide grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+                    <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col h-[380px]">
+                        <h3 class="text-sm font-black text-slate-800 mb-4 uppercase">PREVISÃO DIÁRIA</h3>
+                        <div class="flex-1 relative w-full min-h-[250px]"><canvas id="forecastChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col h-[380px]">
+                        <h3 class="text-sm font-black text-slate-800 mb-4 uppercase">PREVISÃO SEMANAL</h3>
+                        <div class="flex-1 relative w-full min-h-[250px]"><canvas id="weeklyForecastChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Tabelas Originais da Tela -->
+                <div class="print-hide grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-5">
+                    <div class="xl:col-span-2 bg-white rounded-[24px] shadow-soft border border-slate-100 overflow-hidden">
+                        <div class="p-4 sm:p-5 border-b bg-slate-50/50"><h3 class="text-sm font-black uppercase">DETALHAMENTO DOS BLOCOS</h3></div>
+                        <div class="overflow-x-auto max-h-[400px]">
+                            <table class="w-full text-left min-w-[600px]">
+                                <thead class="bg-white sticky top-0 border-b text-[10px] uppercase font-bold text-slate-400">
+                                    <tr><th class="p-4 sm:p-5 whitespace-nowrap">Início</th><th class="p-4 sm:p-5">Bloco / Ciclo / Cultura / Var.</th><th class="p-4 sm:p-5 text-center">Status</th><th class="p-4 sm:p-5 text-center">Estimado (Un)</th><th class="p-4 sm:p-5 text-right">Saldo (Kg)</th></tr>
+                                </thead>
+                                <tbody id="forecastTableBody" class="text-sm divide-y divide-slate-50"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="xl:col-span-1 bg-white rounded-[24px] shadow-soft border border-slate-100 overflow-hidden">
+                        <div class="p-4 sm:p-5 border-b bg-slate-50/50"><h3 class="text-sm font-black uppercase">PROJEÇÃO DIÁRIA</h3></div>
+                        <div class="overflow-y-auto max-h-[400px]">
+                            <table class="w-full text-left">
+                                <thead class="bg-white sticky top-0 border-b text-[10px] uppercase font-bold text-slate-400">
+                                    <tr><th class="p-4">Data</th><th class="p-4 text-center">Un</th><th class="p-4 text-right">Kg</th></tr>
+                                </thead>
+                                <tbody id="forecastDailyTableBody" class="text-sm divide-y divide-slate-50"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: PRODUTIVIDADE -->
+            <div id="viewProdutividade" class="hidden flex-col gap-6 animate-fade-in-down">
+                <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,2.5fr)_160px_100px_145px] gap-4 items-end">
+                        <div class="sm:col-span-2 md:col-span-2 xl:col-span-1">
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Período</label>
+                            <input type="text" id="startMonthProd" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Bloco</label>
+                            <select id="blockSearchProd" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleBlockChange('Prod')"><option value="">Todos</option></select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
+                            <select id="cycleSearchProd" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersProd()"><option value="">Todos</option></select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
+                            <select id="cropTypeProd" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleCropChange('Prod')"><option value="">Todas</option></select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
+                            <select id="varietySearchProd" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersProd()"><option value="">Todas</option></select>
+                        </div>
+                        <div class="sm:col-span-2 md:col-span-2 xl:col-span-1 relative" id="customStatusDropdownProd">
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
+                            <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer h-[38px] flex justify-between items-center" onclick="toggleStatusDropdown('Prod')">
+                                <span id="statusSelectedTextProd" class="truncate">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0 ml-2"></i>
+                            </div>
+                            <div id="statusMenuProd" class="hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border rounded-2xl shadow-float p-2 overflow-hidden">
+                                <div class="max-h-60 overflow-y-auto">
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Prod" value="Concluído" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold">Concluído</span></label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Prod" value="Perda total" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold">Perda total</span></label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Prod" value="Pendente" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold">Pendente</span></label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Prod" value="Em andamento" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold">Em andamento</span></label>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="clearFilters('Prod')" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
+                            <i data-lucide="eraser" class="w-4 h-4"></i> Limpar
+                        </button>
+                        <button type="button" onclick="fetchData()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="print-hide grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-4 text-center">
+                    <div class="bg-white p-4 rounded-2xl border">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Total Plantas</span>
+                        <p id="prodTotalPlantas" class="text-2xl font-black">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Unidades</span>
+                        <p id="prodUnidades" class="text-2xl font-black">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Peso (Kg)</span>
+                        <p id="prodPeso" class="text-2xl font-black">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Média (g)</span>
+                        <p id="prodMedia" class="text-2xl font-black">0</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Caixas</span>
+                        <p id="prodCaixas" class="text-2xl font-black">0</p>
+                    </div>
+                    <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 text-emerald-700">
+                        <span class="text-[10px] font-bold uppercase">Aprov. Real</span>
+                        <p id="prodPercColhido" class="text-2xl font-black">0%</p>
+                    </div>
+                    <div class="bg-rose-50 p-4 rounded-2xl border border-rose-100 text-rose-700">
+                        <span class="text-[10px] font-bold uppercase">Perdas</span>
+                        <p id="prodPercPerda" class="text-2xl font-black">0%</p>
+                    </div>
+                    <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 text-indigo-700">
+                        <span class="text-[10px] font-bold uppercase">Dias Prod.</span>
+                        <p id="prodDiasProducao" class="text-2xl font-black">0</p>
+                    </div>
+                </div>
+
+                <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-6 border-b border-slate-50 pb-4">
+                        <h3 class="text-sm font-black text-slate-800 uppercase tracking-wide">Unidades</h3>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">Por Variedade</span>
+                    </div>
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div class="w-full lg:w-2/3 h-[280px] lg:h-[320px] relative"><canvas id="chartProdUnidadesBar"></canvas></div>
+                        <div class="w-full lg:w-1/3 h-[250px] lg:h-[320px] flex justify-center relative"><canvas id="chartProdUnidadesPie"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-6 border-b border-slate-50 pb-4">
+                        <h3 class="text-sm font-black text-slate-800 uppercase tracking-wide">Peso (kg)</h3>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">Por Variedade</span>
+                    </div>
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div class="w-full lg:w-2/3 h-[280px] lg:h-[320px] relative"><canvas id="chartProdPesoBar"></canvas></div>
+                        <div class="w-full lg:w-1/3 h-[250px] lg:h-[320px] flex justify-center relative"><canvas id="chartProdPesoPie"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-6 border-b border-slate-50 pb-4">
+                        <h3 class="text-sm font-black text-slate-800 uppercase tracking-wide">Peso Médio (kg/unid.)</h3>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">Por Variedade</span>
+                    </div>
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div class="w-full lg:w-2/3 h-[280px] lg:h-[320px] relative"><canvas id="chartProdMediaBar"></canvas></div>
+                        <div class="w-full lg:w-1/3 h-[250px] lg:h-[320px] flex justify-center relative"><canvas id="chartProdMediaPie"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-6 border-b border-slate-50 pb-4">
+                        <h3 class="text-sm font-black text-slate-800 uppercase tracking-wide">Caixas</h3>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">Por Variedade</span>
+                    </div>
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <div class="w-full lg:w-2/3 h-[280px] lg:h-[320px] relative"><canvas id="chartProdCaixasBar"></canvas></div>
+                        <div class="w-full lg:w-1/3 h-[250px] lg:h-[320px] flex justify-center relative"><canvas id="chartProdCaixasPie"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: CALENDÁRIO -->
+            <div id="viewCalendario" class="hidden flex-col gap-6 animate-fade-in-down">
+                <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,2.5fr)_160px_100px_145px] gap-4 items-end">
+                        <div class="sm:col-span-2 md:col-span-2 xl:col-span-1">
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Período Estimado</label>
+                            <input type="text" id="startMonthCal" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Bloco</label>
+                            <select id="blockSearchCal" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleBlockChange('Cal')"><option value="">Todos</option></select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
+                            <select id="cycleSearchCal" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersCal()"><option value="">Todos</option></select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
+                            <select id="cropTypeCal" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleCropChange('Cal')"><option value="">Todas</option></select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
+                            <select id="varietySearchCal" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersCal()"><option value="">Todas</option></select>
+                        </div>
+                        <div class="sm:col-span-2 md:col-span-2 xl:col-span-1 relative" id="customStatusDropdownCal">
+                            <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
+                            <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer h-[38px] flex justify-between items-center" onclick="toggleStatusDropdown('Cal')"><span id="statusSelectedTextCal" class="truncate">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0 ml-2"></i></div>
+                            <div id="statusMenuCal" class="hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                <div class="max-h-60 overflow-y-auto">
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Cal" value="Concluído" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold">Concluído</span></label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Cal" value="Perda total" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold">Perda total</span></label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Cal" value="Pendente" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold">Pendente</span></label>
+                                    <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Cal" value="Em andamento" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold">Em andamento</span></label>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="clearFilters('Cal')" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
+                            <i data-lucide="eraser" class="w-4 h-4"></i> Limpar
+                        </button>
+                        <button type="button" onclick="fetchData()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                        </button>
+                    </div>
+                </div>
+                <div class="print-hide grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
+                    <div class="bg-gradient-to-br from-brand-600 to-brand-800 p-5 sm:p-6 rounded-[24px] text-white flex flex-col justify-center relative overflow-hidden">
+                        <i data-lucide="trees" class="absolute -right-4 -bottom-4 w-20 h-20 text-brand-900 opacity-20"></i>
+                        <span class="text-[11px] font-bold text-brand-200 uppercase tracking-widest">Total Plantas Registradas</span>
+                        <p id="calTotalPlants" class="text-4xl font-black mt-1">0</p>
+                    </div>
+                    <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col justify-center relative overflow-hidden">
+                        <i data-lucide="layers" class="absolute -right-4 -bottom-4 w-20 h-20 text-slate-100 opacity-50"></i>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Total de Lotes Consolidados</span>
+                        <p id="calTotalBlocks" class="text-4xl font-black mt-1">0</p>
+                    </div>
+                    <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col justify-center relative overflow-hidden">
+                        <i data-lucide="timer" class="absolute -right-4 -bottom-4 w-20 h-20 text-slate-100 opacity-50"></i>
+                        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Ciclo Real Médio</span>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <p id="calAvgCycle" class="text-4xl font-black text-brand-600">--</p>
+                            <span class="text-xs font-bold text-slate-400 uppercase">dias no campo</span>
+                        </div>
+                        <div class="mt-2 text-[10px] text-slate-400 font-medium" id="calAvgCycleLabel">Do plantio à 1ª colheita</div>
+                    </div>
+                </div>
+                <div class="print-hide bg-white rounded-[24px] shadow-soft border border-slate-100 overflow-hidden">
+                    <div class="p-4 sm:p-5 border-b bg-slate-50/50"><h3 class="text-sm font-black uppercase">LISTA DE PLANTIOS (POR BLOCO E CICLO)</h3></div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left min-w-[700px]">
+                            <thead class="bg-white text-[10px] text-slate-400 uppercase border-b">
+                                <tr><th class="p-4 sm:p-5 whitespace-nowrap">Plantio</th><th class="p-4 sm:p-5 whitespace-nowrap">Início Estimado</th><th class="p-4 sm:p-5 whitespace-nowrap">Início Real (1º Corte)</th><th class="p-4 sm:p-5">Bloco / Ciclo / Cultura / Variedades</th><th class="p-4 sm:p-5 text-center">Status</th><th class="p-4 sm:p-5 text-right">Qtd Total</th></tr>
+                            </thead>
+                            <tbody id="calTableBody" class="text-sm divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- RECIPIENTE EXCLUSIVO PARA IMPRESSÃO -->
+    <div id="printDocumentContainer"></div>
+
+    <!-- LOADING MODAL -->
+    <div id="loadingModal" class="fixed inset-0 bg-slate-900/40 z-[80] hidden flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 w-11/12 max-w-sm text-center shadow-float border border-slate-100">
+            <i data-lucide="loader-2" class="h-8 w-8 text-slate-800 animate-spin mx-auto mb-4"></i>
+            <h3 class="text-lg font-black text-slate-800">Sincronizando Dados</h3>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxc6aGG5-YwKvuocpxPzTu8EQj1q0Wiu4PhuULEiDItBsGN6oprC14lFJjJYTYwbr050A/exec"; 
+        let charts = {}; 
+        let cachedApiData = null; 
+        let cropVarietyMap = {};
+        let blockCycleMap = {};
+        let allCrops = new Set();
+        let allVarieties = new Set();
+        let allBlocks = new Set();
+        let allCycles = new Set();
+        let lastProcessedData = { prev: null, prod: null, cal: null }; 
+        const nomesDosMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+        Chart.register(ChartDataLabels);
+        Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+        Chart.defaults.color = '#64748b';
+
+        const safeSetText = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = val;
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+
+            const addShortcuts = (instance) => {
+                const container = instance.calendarContainer;
+                if (!container.querySelector('.flatpickr-shortcuts-sidebar')) {
+                    const sidebar = document.createElement('div');
+                    sidebar.className = 'flatpickr-shortcuts-sidebar';
+                    
+                    const options = [
+                        { label: 'Hoje', range: () => [new Date(), new Date()] },
+                        { label: 'Ontem', range: () => { const d = new Date(); d.setDate(d.getDate() - 1); return [d, d]; } },
+                        { label: 'Últimos 7 dias', range: () => { const d = new Date(); d.setDate(d.getDate() - 7); return [d, new Date()]; } },
+                        { label: 'Últimos 30 dias', range: () => { const d = new Date(); d.setDate(d.getDate() - 30); return [d, new Date()]; } },
+                        { label: 'Este mês', range: () => [new Date(new Date().getFullYear(), new Date().getMonth(), 1), new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)] },
+                        { label: 'Mês passado', range: () => [new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1), new Date(new Date().getFullYear(), new Date().getMonth(), 0)] },
+                        { label: 'Este trimestre', range: () => { const m = new Date().getMonth(); const q = Math.floor(m / 3); return [new Date(new Date().getFullYear(), q * 3, 1), new Date(new Date().getFullYear(), (q + 1) * 3, 0)]; } },
+                        { label: 'Este ano', range: () => [new Date(new Date().getFullYear(), 0, 1), new Date()] },
+                        { label: 'Ano passado', range: () => [new Date(new Date().getFullYear() - 1, 0, 1), new Date(new Date().getFullYear() - 1, 11, 31)] },
+                        { label: 'Limpar', range: () => [] }
+                    ];
+
+                    options.forEach(opt => {
+                        const btn = document.createElement('div');
+                        btn.className = 'shortcut-item';
+                        btn.innerHTML = `<span>${opt.label}</span><i data-lucide="chevron-right" class="w-3 h-3"></i>`;
+                        btn.onclick = () => {
+                            let rng = typeof opt.range === 'function' ? opt.range() : opt.range;
+                            if (rng.length > 0) {
+                                instance.setDate(rng, false);
+                                instance.jumpToDate(rng[0]); 
+                            } else {
+                                instance.clear();
+                                instance.jumpToDate(new Date()); 
+                            }
+                            container.querySelectorAll('.shortcut-item').forEach(x => x.classList.remove('active'));
+                            btn.classList.add('active');
+                            lucide.createIcons();
+                        };
+                        sidebar.appendChild(btn);
+                    });
+                    
+                    container.prepend(sidebar);
+                    container.classList.add('has-shortcuts');
+                }
+            };
+
+            const injectDataStudioUI = (instance) => {
+                const container = instance.calendarContainer;
+                addShortcuts(instance);
+                
+                if(!container.querySelector('.calendar-main-area')){
+                    const innerContainer = container.querySelector('.flatpickr-innerContainer');
+                    const monthsNav = container.querySelector('.flatpickr-months'); 
+                    
+                    const calendarMain = document.createElement('div');
+                    calendarMain.className = 'calendar-main-area';
+                    
+                    const headerLabels = document.createElement('div');
+                    headerLabels.className = 'calendar-header-labels';
+                    headerLabels.innerHTML = `
+                        <div class="header-label-box"><div class="header-label-text">Data de início</div></div>
+                        <div class="header-label-box"><div class="header-label-text">Data de término</div></div>
+                    `;
+                    
+                    calendarMain.appendChild(headerLabels);
+                    calendarMain.appendChild(monthsNav); 
+                    calendarMain.appendChild(innerContainer);
+
+                    const footer = document.createElement('div');
+                    footer.className = 'calendar-footer';
+                    footer.innerHTML = `
+                        <button class="footer-btn btn-cancel">Cancelar</button>
+                        <button class="footer-btn btn-apply">Aplicar</button>
+                    `;
+                    
+                    footer.querySelector('.btn-cancel').onclick = () => instance.close();
+                    footer.querySelector('.btn-apply').onclick = () => {
+                        if (instance.selectedDates.length === 2) {
+                            const id = instance.element.id;
+                            if (id === 'startMonthPrev') applyFiltersPrev();
+                            else if (id === 'startMonthProd') applyFiltersProd();
+                            else if (id === 'startMonthCal') applyFiltersCal();
+                            instance.close();
+                        }
+                    };
+
+                    calendarMain.appendChild(footer);
+                    container.appendChild(calendarMain);
+                }
+                lucide.createIcons();
+            };
+
+            flatpickr(".date-range-picker", {
+                mode: "range",
+                locale: "pt",
+                showMonths: window.innerWidth > 768 ? 2 : 1,
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                animate: false,
+                onReady: function(selectedDates, dateStr, instance) {
+                    injectDataStudioUI(instance);
+                }
+            });
+
+            if (document.getElementById('startMonthPrev')) document.getElementById('startMonthPrev').value = "";
+            if (document.getElementById('startMonthProd')) document.getElementById('startMonthProd').value = "";
+            if (document.getElementById('startMonthCal')) document.getElementById('startMonthCal').value = "";
+            
+            document.addEventListener('click', (e) => {
+                ['Prev', 'Prod', 'Cal'].forEach(tab => {
+                    const drop = document.getElementById('customStatusDropdown' + tab);
+                    const menu = document.getElementById('statusMenu' + tab);
+                    if (drop && menu && !drop.contains(e.target)) menu.classList.add('hidden');
+                });
+            });
+            fetchData();
+        });
+
+        async function fetchData() {
+            document.getElementById('loadingModal').classList.remove('hidden');
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=getData`);
+                cachedApiData = await response.json();
+                buildFilterMaps(cachedApiData);
+                populateFilterDropdowns();
+                
+                ['Prev', 'Prod', 'Cal'].forEach(tab => {
+                    const cropDrop = document.getElementById('cropType' + tab);
+                    if (cropDrop && cropDrop.value === "") {
+                        const brocolisOpt = Array.from(cropDrop.options).find(o => o.value.toUpperCase().includes('BRÓCOLIS') || o.value.toUpperCase() === 'BROCOLIS');
+                        if (brocolisOpt) cropDrop.value = brocolisOpt.value;
+                    }
+                });
+
+                ['Prev', 'Prod', 'Cal'].forEach(updateVarietyDropdownForTab);
+                ['Prev', 'Prod', 'Cal'].forEach(updateCycleDropdownForTab);
+                applyFiltersPrev(); applyFiltersProd(); applyFiltersCal();
+            } catch (err) {
+                console.error("Erro na busca de dados:", err);
+            } finally {
+                document.getElementById('loadingModal').classList.add('hidden');
+            }
+        }
+
+        function switchTab(tabName) {
+            ['previsao', 'produtividade', 'calendario'].forEach(t => {
+                const btn = document.getElementById('tab-' + t);
+                const view = document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (t === tabName) {
+                    btn.className = "tab-btn active pb-3 text-sm uppercase tracking-wider flex items-center gap-2";
+                    view.classList.remove('hidden'); view.classList.add('flex');
+                } else {
+                    btn.className = "tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2";
+                    view.classList.add('hidden'); view.classList.remove('flex');
+                }
+            });
+        }
+
+        function normalizeStr(text) { return (text || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim(); }
+        
+        function parseGoogleDate(rawDate) {
+            if (!rawDate) return null;
+            let clean = rawDate.toString().trim();
+            if (clean.includes('/')) {
+                let p = clean.split(' ')[0].split('/');
+                clean = `${p[2]}-${p[1]}-${p[0]}`;
+            } else if (clean.includes('T')) clean = clean.split('T')[0];
+            const d = new Date(clean + "T12:00:00");
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function getWeekNumber(d) {
+            const temp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            temp.setUTCDate(temp.getUTCDate() + 4 - (temp.getUTCDay() || 7));
+            const yearStart = new Date(Date.UTC(temp.getUTCFullYear(), 0, 1));
+            return Math.ceil((((temp - yearStart) / 86400000) + 1) / 7);
+        }
+
+        function buildFilterMaps(data) {
+            cropVarietyMap = {}; allCrops.clear(); allVarieties.clear();
+            blockCycleMap = {}; allBlocks.clear(); allCycles.clear();
+            const process = (crop, variety, bloco, ciclo) => {
+                const c = (crop || "").trim(); const v = (variety || "").trim();
+                const b = (bloco || "").toString().trim(); const cy = (ciclo || "").toString().trim();
+                if (c) {
+                    allCrops.add(c);
+                    if (!cropVarietyMap[c]) cropVarietyMap[c] = new Set();
+                    if (v) { cropVarietyMap[c].add(v); allVarieties.add(v); }
+                }
+                if (b) {
+                    allBlocks.add(b);
+                    if (!blockCycleMap[b]) blockCycleMap[b] = new Set();
+                    if (cy) { blockCycleMap[b].add(cy); allCycles.add(cy); }
+                }
+            };
+            if (data.historico) data.historico.forEach(i => process(i.cultura, i.variedade_comercial, i.bloco, i.ciclo));
+            if (data.pendentes) data.pendentes.forEach(i => process(i.cultura, i.variedade, i.nome, i.ciclo));
+        }
+
+        function populateFilterDropdowns() {
+            const sortedCrops = Array.from(allCrops).sort();
+            ['Prev', 'Prod', 'Cal'].forEach(tab => {
+                const drop = document.getElementById('cropType' + tab);
+                if (drop) {
+                    const current = drop.value;
+                    drop.innerHTML = '<option value="">Todas</option>';
+                    sortedCrops.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c; opt.textContent = c; drop.appendChild(opt);
+                    });
+                    if (current && Array.from(drop.options).some(o => o.value === current)) drop.value = current;
+                }
+            });
+            const sortedBlocks = Array.from(allBlocks).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+            ['Prev', 'Prod', 'Cal'].forEach(tab => {
+                const drop = document.getElementById('blockSearch' + tab);
+                if (drop) {
+                    const current = drop.value;
+                    drop.innerHTML = '<option value="">Todos</option>';
+                    sortedBlocks.forEach(b => {
+                        const opt = document.createElement('option');
+                        opt.value = b; opt.textContent = b; drop.appendChild(opt);
+                    });
+                    if (current && Array.from(drop.options).some(o => o.value === current)) drop.value = current;
+                }
+            });
+        }
+
+        function updateCycleDropdownForTab(tab) {
+            const blockEl = document.getElementById('blockSearch' + tab);
+            if (!blockEl) return;
+            const blockVal = blockEl.value;
+            const cycleDrop = document.getElementById('cycleSearch' + tab);
+            if (!cycleDrop) return;
+            const current = cycleDrop.value;
+            let list = blockVal ? Array.from(blockCycleMap[blockVal] || []) : Array.from(allCycles);
+            list.sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+            cycleDrop.innerHTML = '<option value="">Todos</option>';
+            list.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c; cycleDrop.appendChild(opt);
+            });
+            if (current && list.includes(current)) cycleDrop.value = current;
+        }
+
+        function handleBlockChange(tab) {
+            updateCycleDropdownForTab(tab);
+            if (tab === 'Prev') applyFiltersPrev();
+            else if (tab === 'Prod') applyFiltersProd();
+            else applyFiltersCal();
+        }
+
+        function updateVarietyDropdownForTab(tab) {
+            const cropEl = document.getElementById('cropType' + tab);
+            if (!cropEl) return;
+            const cropVal = cropEl.value;
+            const varDrop = document.getElementById('varietySearch' + tab);
+            if (!varDrop) return;
+            const current = varDrop.value;
+            let list = cropVal ? Array.from(cropVarietyMap[cropVal] || []) : Array.from(allVarieties);
+            list.sort();
+            varDrop.innerHTML = '<option value="">Todas</option>';
+            list.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v; opt.textContent = v; varDrop.appendChild(opt);
+            });
+            if (current && list.includes(current)) varDrop.value = current;
+        }
+
+        function handleCropChange(tab) {
+            updateVarietyDropdownForTab(tab);
+            if (tab === 'Prev') applyFiltersPrev();
+            else if (tab === 'Prod') applyFiltersProd();
+            else applyFiltersCal();
+        }
+
+        function clearFilters(tab) {
+            const monthInput = document.getElementById('startMonth' + tab);
+            if (monthInput && monthInput._flatpickr) monthInput._flatpickr.clear();
+            else if (monthInput) monthInput.value = "";
+            const blockSelect = document.getElementById('blockSearch' + tab);
+            if (blockSelect) blockSelect.value = "";
+            const cycleSelect = document.getElementById('cycleSearch' + tab);
+            if (cycleSelect) cycleSelect.value = "";
+            const cropSelect = document.getElementById('cropType' + tab);
+            if (cropSelect) {
+                const brocolisOpt = Array.from(cropSelect.options).find(o => o.value.toUpperCase().includes('BRÓCOLIS') || o.value.toUpperCase() === 'BROCOLIS');
+                cropSelect.value = brocolisOpt ? brocolisOpt.value : "";
+            }
+            const varietySelect = document.getElementById('varietySearch' + tab);
+            if (varietySelect) varietySelect.value = "";
+            if (tab === 'Prev') {
+                const rate = document.getElementById('deliveryRatePrev');
+                if (rate) rate.value = "50";
+            }
+            const checkboxes = document.querySelectorAll('.status-checkbox-' + tab);
+            checkboxes.forEach(cb => cb.checked = true);
+            const statusText = document.getElementById('statusSelectedText' + tab);
+            if (statusText) statusText.innerText = "Todos";
+            updateCycleDropdownForTab(tab);
+            updateVarietyDropdownForTab(tab);
+            if (tab === 'Prev') applyFiltersPrev();
+            else if (tab === 'Prod') applyFiltersProd();
+            else applyFiltersCal();
+        }
+
+        function applyFiltersPrev() {
+            if (!cachedApiData) return;
+            const targetMonth = document.getElementById('startMonthPrev')?.value || "";
+            const block = document.getElementById('blockSearchPrev')?.value || "";
+            const cycle = document.getElementById('cycleSearchPrev')?.value || "";
+            const crop = document.getElementById('cropTypePrev')?.value || "";
+            const variety = document.getElementById('varietySearchPrev')?.value || "";
+            const rateEl = document.getElementById('deliveryRatePrev');
+            const rate = rateEl ? (parseFloat(rateEl.value) || 50) : 50;
+            const statuses = Array.from(document.querySelectorAll('.status-checkbox-Prev')).filter(cb => cb.checked).map(cb => cb.value.toLowerCase());
+            const res = processPrevisao(cachedApiData.historico, cachedApiData.pendentes, targetMonth, block, cycle, crop, variety, statuses, rate);
+            lastProcessedData.prev = res;
+            updatePrevisaoView(res);
+        }
+
+        function applyFiltersProd() {
+            if (!cachedApiData) return;
+            const targetMonth = document.getElementById('startMonthProd')?.value || "";
+            const block = document.getElementById('blockSearchProd')?.value || "";
+            const cycle = document.getElementById('cycleSearchProd')?.value || "";
+            const crop = document.getElementById('cropTypeProd')?.value || "";
+            const variety = document.getElementById('varietySearchProd')?.value || "";
+            const statuses = Array.from(document.querySelectorAll('.status-checkbox-Prod')).filter(cb => cb.checked).map(cb => cb.value.toLowerCase());
+            const res = processProdutividade(cachedApiData.historico, cachedApiData.pendentes, targetMonth, block, cycle, crop, variety, statuses);
+            lastProcessedData.prod = res;
+            updateProdutividadeView(res);
+        }
+
+        function applyFiltersCal() {
+            if (!cachedApiData) return;
+            const targetMonth = document.getElementById('startMonthCal')?.value || "";
+            const block = document.getElementById('blockSearchCal')?.value || "";
+            const cycle = document.getElementById('cycleSearchCal')?.value || "";
+            const crop = document.getElementById('cropTypeCal')?.value || "";
+            const variety = document.getElementById('varietySearchCal')?.value || "";
+            const statuses = Array.from(document.querySelectorAll('.status-checkbox-Cal')).filter(cb => cb.checked).map(cb => cb.value.toLowerCase());
+            const res = processCalendario(cachedApiData.pendentes, cachedApiData.historico, targetMonth, block, cycle, crop, variety, statuses);
+            lastProcessedData.cal = res;
+            updateCalendarioView(res);
+        }
+
+        function processPrevisao(hist, pend, m, bF, cyF, crF, vF, stats, rate) {
+            let targetStart = null, targetEnd = null, prevY = null, prevM = null;
+            if (m) {
+                let startStr = m, endStr = m;
+                if (m.includes(' até ')) { [startStr, endStr] = m.split(' até '); }
+                else if (m.includes(' to ')) { [startStr, endStr] = m.split(' to '); }
+                else if (m.includes(' a ')) { [startStr, endStr] = m.split(' a '); }
+                targetStart = new Date(startStr + "T00:00:00");
+                targetEnd = new Date(endStr + "T23:59:59");
+                prevM = targetStart.getMonth() - 1; prevY = targetStart.getFullYear();
+                if(prevM < 0){ prevM=11; prevY-=1; }
+            } else {
+                const hoje = new Date(); prevM = hoje.getMonth()-1; prevY = hoje.getFullYear(); if(prevM < 0){ prevM=11; prevY-=1; }
+            }
+            const delivered = {}; const lastDeliv = {}; let pCab=0, pKg=0; const pDays = new Set();
+            hist.forEach(r => {
+                const d = parseGoogleDate(r.data_entrega); if(!d) return;
+                const matchBlock = !bF || normalizeStr(r.bloco) === normalizeStr(bF);
+                const matchCycle = !cyF || normalizeStr(r.ciclo) === normalizeStr(cyF);
+                const matchCrop = !crF || normalizeStr(r.cultura) === normalizeStr(crF);
+                const matchVar = !vF || normalizeStr(r.variedade_comercial) === normalizeStr(vF);
+                const k = `${normalizeStr(r.bloco)}|${normalizeStr(r.ciclo)}|${normalizeStr(r.cultura)}`;
+                if(!delivered[k]) delivered[k] = {u:0,kg:0}; delivered[k].u += r.qtd_cabecas; delivered[k].kg += r.peso_total_kg;
+                if(!lastDeliv[k] || d > lastDeliv[k]) lastDeliv[k] = d;
+                if(matchBlock && matchCycle && matchCrop && matchVar) {
+                    if (targetStart === null || (d.getMonth() === prevM && d.getFullYear() === prevY)) {
+                        pCab += r.qtd_cabecas; pKg += r.peso_total_kg; pDays.add(d.toISOString().split('T')[0]);
+                    }
+                }
+            });
+            const dTrabs = pDays.size || 1; const pMedKg = pCab > 0 ? (pKg / pCab) : 0.383;
+            let ritmo = pCab > 0 ? Math.round(pCab / dTrabs) : 1500;
+            const proj = []; const taxa = rate/100; const processedKeys = new Set(); let dUn=0, dKg=0;
+            const saldoDist = {}; for(let k in delivered) saldoDist[k] = delivered[k].u;
+            const blks = pend.map(bl => ({...bl, dObj: parseGoogleDate(bl.data_colheita)})).filter(bl => bl.dObj).sort((a,b) => a.dObj - b.dObj);
+            blks.forEach(bl => {
+                const k = `${normalizeStr(bl.nome)}|${normalizeStr(bl.ciclo)}|${normalizeStr(bl.cultura)}`;
+                const sDisp = saldoDist[k] || 0; const abater = Math.min(bl.qtd_plantas, sDisp);
+                saldoDist[k] -= abater; bl.jaEntregueAttr = abater; bl.pRest = bl.qtd_plantas - abater;
+            });
+            blks.forEach(bl => {
+                if(bF && normalizeStr(bl.nome) !== normalizeStr(bF)) return;
+                if(cyF && normalizeStr(bl.ciclo) !== normalizeStr(cyF)) return;
+                if(crF && normalizeStr(bl.cultura) !== normalizeStr(crF)) return;
+                if(vF && normalizeStr(bl.variedade) !== normalizeStr(vF)) return;
+                const st = (bl.status || "pendente").toLowerCase(); if(!stats.some(s => st.includes(s))) return;
+                const matchesDate = targetStart === null || (bl.dObj >= targetStart && bl.dObj <= targetEnd);
+                const firstDayM = targetStart !== null ? targetStart : new Date();
+                const isAndamentoAntigo = st.includes("andamento") && bl.dObj < firstDayM;
+                if (!matchesDate && !isAndamentoAntigo) return;
+                const k = `${normalizeStr(bl.nome)}|${normalizeStr(bl.ciclo)}|${normalizeStr(bl.cultura)}`;
+                if(!processedKeys.has(k)){ dUn += delivered[k]?.u || 0; dKg += delivered[k]?.kg || 0; processedKeys.add(k); }
+                if(bl.pRest > 0){
+                    let pEfet = bl.pRest * taxa; const dCols = Math.max(1, Math.ceil(pEfet / ritmo));
+                    proj.push({ bloco: bl.nome, ciclo: bl.ciclo, cultura: bl.cultura, variedade: bl.variedade, status: bl.status, dObj: bl.dObj, jaEnt: bl.jaEntregueAttr, pRest: bl.pRest, pEfet, vKg: pEfet * pMedKg, dCols, kgDia: (pEfet*pMedKg)/dCols, unDia: pEfet/dCols, lastD: lastDeliv[k] });
+                }
+            });
+            const groupedDay = {}; const groupedWeek = {}; let totalKg=0, totalUn=0, totalField=0;
+            proj.forEach(p => {
+                totalField += p.pRest; let count=0, offset=0;
+                let base = new Date(p.dObj); if(p.status.toLowerCase().includes("andamento")){ if(p.lastD){ base = new Date(p.lastD); base.setDate(base.getDate()+1); } }
+                while(count < p.dCols){
+                    const d = new Date(base); d.setDate(d.getDate() + offset);
+                    if([1,3,5,6].includes(d.getDay())){
+                        if(targetStart === null || (d >= targetStart && d <= targetEnd)){
+                            const dk = d.toISOString().split('T')[0]; if(!groupedDay[dk]) groupedDay[dk] = {p:0,u:0}; groupedDay[dk].p += p.kgDia; groupedDay[dk].u += p.unDia;
+                            const wk = `Semana ${getWeekNumber(d)}`; if(!groupedWeek[wk]) groupedWeek[wk] = {p:0,u:0,sk:getWeekNumber(d)}; groupedWeek[wk].p += p.kgDia; groupedWeek[wk].u += p.unDia;
+                            totalKg += p.kgDia; totalUn += p.unDia;
+                        }
+                        count++;
+                    }
+                    offset++;
+                }
+            });
+            const cData = Object.keys(groupedDay).sort().map(k => { const [y,m,d] = k.split('-'); return { label: `${d} ${nomesDosMeses[parseInt(m)-1]} ${y}`, peso: groupedDay[k].p, unidades: groupedDay[k].u }; });
+            const wData = Object.keys(groupedWeek).sort((a,b) => groupedWeek[a].sk - groupedWeek[b].sk).map(k => ({ label: k, peso: groupedWeek[k].p, unidades: groupedWeek[k].u }));
+            let labelProjecao = "Todo Período";
+            if (bF && cyF) labelProjecao = `${bF} (Ciclo ${cyF})`;
+            else if (bF) labelProjecao = `Bloco: ${bF}`;
+            else if (cyF) labelProjecao = `Ciclo: ${cyF}`;
+            else if (vF) labelProjecao = `Var: ${vF}`;
+            else if (targetStart !== null) labelProjecao = `${targetStart.toLocaleDateString('pt-BR')} a ${targetEnd.toLocaleDateString('pt-BR')}`;
+            let nomeMesBase = m ? new Date(prevY, prevM, 15).toLocaleString('pt-BR', { month: 'long', year: 'numeric' }) : "Geral";
+            return { pesoAvg: Math.round(pMedKg*1000), ritmo, totalKg, totalUn, totalCampo: totalField, dUn, dKg, dAvg: dUn > 0 ? Math.round((dKg/dUn)*1000):0, chartData: cData, weeklyData: wData, tabela: proj, nomeMesBase: nomeMesBase, labelAlvo: labelProjecao };
+        }
+
+        function processProdutividade(hist, pend, m, bF, cyF, crF, vF, stats) {
+            let targetStart = null, targetEnd = null;
+            if (m) {
+                let startStr = m, endStr = m;
+                if (m.includes(' até ')) { [startStr, endStr] = m.split(' até '); }
+                else if (m.includes(' to ')) { [startStr, endStr] = m.split(' to '); }
+                else if (m.includes(' a ')) { [startStr, endStr] = m.split(' a '); }
+                targetStart = new Date(startStr + "T00:00:00");
+                targetEnd = new Date(endStr + "T23:59:59");
+            }
+            const prod = { totalU: 0, totalKg: 0, totalCx: 0, days: new Set(), diario: {}, vars: {}, dispTotalP: 0, minD: null, maxD: null };
+            const lotesTrabalhados = new Set();
+            hist.forEach(r => {
+                const d = parseGoogleDate(r.data_entrega); if(!d) return;
+                if(bF && normalizeStr(r.bloco) !== normalizeStr(bF)) return;
+                if(cyF && normalizeStr(r.ciclo) !== normalizeStr(cyF)) return;
+                if(crF && normalizeStr(r.cultura) !== normalizeStr(crF)) return;
+                if(vF && normalizeStr(r.variedade_comercial) !== normalizeStr(vF)) return;
+                const bInfo = pend.find(p => normalizeStr(p.nome) === normalizeStr(r.bloco) && normalizeStr(p.ciclo) === normalizeStr(r.ciclo));
+                const st = (bInfo?.status || "pendente").toLowerCase(); if(!stats.some(s => st.includes(s))) return;
+                const isMatchDate = targetStart === null || (d >= targetStart && d <= targetEnd);
+                if(isMatchDate){
+                    prod.totalU += r.qtd_cabecas; prod.totalKg += r.peso_total_kg; prod.totalCx += (r.caixas || 0);
+                    if(!prod.minD || d < prod.minD) prod.minD = d;
+                    if(!prod.maxD || d > prod.maxD) prod.maxD = d;
+                    const k = `${normalizeStr(r.bloco)}|${normalizeStr(r.ciclo)}|${normalizeStr(r.cultura)}`;
+                    lotesTrabalhados.add(k);
+                    const ds = d.toISOString().split('T')[0]; prod.days.add(ds);
+                    if(!prod.diario[ds]) prod.diario[ds] = {un:0,kg:0,cx:0}; prod.diario[ds].un += r.qtd_cabecas; prod.diario[ds].kg += r.peso_total_kg; prod.diario[ds].cx += (r.caixas || 0);
+                    const vc = r.variedade_comercial || "Não Inf."; if(!prod.vars[vc]) prod.vars[vc] = {un:0,kg:0,cx:0}; prod.vars[vc].un += r.qtd_cabecas; prod.vars[vc].kg += r.peso_total_kg; prod.vars[vc].cx += (r.caixas || 0);
+                }
+            });
+            pend.forEach(bl => {
+                const k = `${normalizeStr(bl.nome)}|${normalizeStr(bl.ciclo)}|${normalizeStr(bl.cultura)}`;
+                if(lotesTrabalhados.has(k)) prod.dispTotalP += bl.qtd_plantas;
+            });
+            prod.dProd = prod.days.size; prod.pMedG = prod.totalU > 0 ? Math.round((prod.totalKg / prod.totalU) * 1000) : 0;
+            const calcP = Math.max(prod.dispTotalP, prod.totalU);
+            prod.percC = calcP > 0 ? Math.min(100, Math.round((prod.totalU/calcP)*100)) : 0;
+            prod.percPerda = calcP > 0 ? Math.max(0, 100 - prod.percC) : 0;
+            prod.diasProducao = prod.days.size;
+            return prod;
+        }
+
+        function processCalendario(pend, hist, m, bF, cyF, crF, vF, stats) {
+            let targetStart = null, targetEnd = null;
+            if (m) {
+                let startStr = m, endStr = m;
+                if (m.includes(' até ')) { [startStr, endStr] = m.split(' até '); }
+                else if (m.includes(' to ')) { [startStr, endStr] = m.split(' to '); }
+                else if (m.includes(' a ')) { [startStr, endStr] = m.split(' a '); }
+                targetStart = new Date(startStr + "T00:00:00");
+                targetEnd = new Date(endStr + "T23:59:59");
+            }
+            const iniciosReais = {};
+            hist.forEach(r => {
+                const d = parseGoogleDate(r.data_entrega); if(!d) return;
+                const k = `${normalizeStr(r.bloco)}|${normalizeStr(r.ciclo)}|${normalizeStr(r.cultura)}`;
+                if(!iniciosReais[k] || d < iniciosReais[k]) iniciosReais[k] = d;
+            });
+            const agrup = {}; let tPlants = 0;
+            pend.forEach(bl => {
+                const dEst = parseGoogleDate(bl.data_colheita); if(!dEst) return;
+                const dPlan = parseGoogleDate(bl.data_plantio);
+                if(bF && normalizeStr(bl.nome) !== normalizeStr(bF)) return;
+                if(cyF && normalizeStr(bl.ciclo) !== normalizeStr(cyF)) return;
+                if(crF && normalizeStr(bl.cultura) !== normalizeStr(crF)) return;
+                if(vF && normalizeStr(bl.variedade) !== normalizeStr(vF)) return;
+                const st = (bl.status || "pendente").toLowerCase(); if(!stats.some(s => st.includes(s))) return;
+                if(targetStart !== null && (dEst < targetStart || dEst > targetEnd)) return;
+                const key = `${normalizeStr(bl.nome)}|${normalizeStr(bl.ciclo)}|${normalizeStr(bl.cultura)}`;
+                if(!agrup[key]){
+                    agrup[key] = { bloco: bl.nome, ciclo: bl.ciclo, cultura: bl.cultura, variedades: new Set(), status: bl.status, dataPlantio: dPlan, dataEst: dEst, dataReal: iniciosReais[key] || null, total: 0 };
+                }
+                if(bl.variedade) agrup[key].variedades.add(bl.variedade);
+                agrup[key].total += bl.qtd_plantas; tPlants += bl.qtd_plantas;
+            });
+            const list = Object.values(agrup).sort((a,b) => a.dataEst - b.dataEst);
+            let totalCiclo = 0, countCiclo = 0;
+            list.forEach(item => {
+                if (item.dataReal && item.dataPlantio) {
+                    const diffTime = item.dataReal - item.dataPlantio;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    item.cicloRealDias = diffDays;
+                    totalCiclo += diffDays; countCiclo++;
+                } else item.cicloRealDias = null;
+            });
+            const avgCiclo = countCiclo > 0 ? Math.round(totalCiclo / countCiclo) : null;
+            return { lista: list, totalP: tPlants, totalLotes: list.length, avgCiclo: avgCiclo };
+        }
+
+        function updatePrevisaoView(res) {
+            safeSetText('historicalAvgLabel', res.nomeMesBase === "Geral" ? `Média (gr) (Geral)` : `Média (gr) do anterior (${res.nomeMesBase})`);
+            safeSetText('forecastTotalLabel', `Saldo Projetado (${res.labelAlvo})`);
+            safeSetText('historicalAvg', res.pesoAvg.toLocaleString('pt-BR'));
+            safeSetText('historicalPace', res.ritmo.toLocaleString('pt-BR'));
+            safeSetText('forecastTotal', Math.round(res.totalKg).toLocaleString('pt-BR'));
+            safeSetText('pendingPlants', Math.round(res.totalUn).toLocaleString('pt-BR'));
+            safeSetText('fieldPlantsTotal', Math.round(res.totalCampo).toLocaleString('pt-BR'));
+            safeSetText('deliveredUnits', res.dUn.toLocaleString('pt-BR'));
+            safeSetText('deliveredKg', Math.round(res.dKg).toLocaleString('pt-BR'));
+            safeSetText('deliveredAvg', res.dAvg.toLocaleString('pt-BR'));
+            safeSetText('subForecastDeliveredKg', Math.round(res.dKg).toLocaleString('pt-BR') + ' kg');
+            safeSetText('subForecastDeliveredUn', res.dUn.toLocaleString('pt-BR') + ' un');
+            const tbody = document.getElementById('forecastTableBody');
+            if (tbody) {
+                tbody.innerHTML = res.tabela.length === 0 ? '<tr><td colspan="5" class="p-4 sm:p-6 text-center text-slate-400">Nenhum bloco futuro encontrado.</td></tr>' : '';
+                res.tabela.forEach(b => {
+                    const tr = document.createElement('tr'); const s = (b.status||"").toUpperCase();
+                    const sColor = s.includes('ANDAMENTO') ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600';
+                    tr.innerHTML = `<td class="p-4 sm:p-5 font-semibold text-slate-700 whitespace-nowrap">${b.dObj.toLocaleDateString('pt-BR')}</td><td class="p-4 sm:p-5"><div class="font-black text-slate-800">${b.bloco}</div><div class="text-[10px] text-slate-500">CICLO ${b.ciclo} • ${b.cultura} • <span class="text-brand-600 font-semibold">${b.variedade}</span></div></td><td class="p-4 sm:p-5 text-center"><span class="px-3 py-1 rounded-lg text-[10px] font-black ${sColor}">${b.status}</span></td><td class="p-4 sm:p-5 text-center"><div class="bg-slate-50 rounded-xl p-2 inline-block border"><span class="font-black text-slate-800">${Math.round(b.pEfet).toLocaleString('pt-BR')}</span> un<div class="text-[9px] text-slate-400 mt-1">C: ${b.pRest.toLocaleString('pt-BR')} | E: ${b.jaEnt.toLocaleString('pt-BR')}</div></div></td><td class="p-4 sm:p-5 text-right font-black text-brand-700 text-lg">${Math.round(b.vKg).toLocaleString('pt-BR')}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+            const dtBody = document.getElementById('forecastDailyTableBody');
+            if (dtBody) {
+                dtBody.innerHTML = res.chartData.length === 0 ? '<tr><td colspan="3" class="p-4 text-center text-slate-400">Sem dados.</td></tr>' : '';
+                res.chartData.forEach(d => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="p-4 font-bold text-xs text-slate-700 whitespace-nowrap">${d.label}</td><td class="p-4 text-center"><span class="bg-slate-100 px-2 py-1 rounded font-black text-slate-800">${Math.round(d.unidades).toLocaleString('pt-BR')}</span></td><td class="p-4 text-right"><span class="bg-brand-50 text-brand-600 px-2 py-1 rounded font-black text-sm">${Math.round(d.peso).toLocaleString('pt-BR')}</span></td>`;
+                    dtBody.appendChild(tr);
+                });
+            }
+            createGroupedBarChart('forecastChart', res.chartData); createGroupedBarChart('weeklyForecastChart', res.weeklyData);
+        }
+
+        function updateProdutividadeView(p) {
+            safeSetText('prodTotalPlantas', p.dispTotalP.toLocaleString('pt-BR'));
+            safeSetText('prodUnidades', p.totalU.toLocaleString('pt-BR'));
+            safeSetText('prodPeso', Math.round(p.totalKg).toLocaleString('pt-BR'));
+            safeSetText('prodMedia', p.prodMedia ? p.prodMedia.toLocaleString('pt-BR') : p.pMedG.toLocaleString('pt-BR'));
+            safeSetText('prodCaixas', p.totalCx.toLocaleString('pt-BR'));
+            safeSetText('prodPercColhido', p.percC + '%');
+            safeSetText('prodPercPerda', p.percPerda + '%');
+            safeSetText('prodDiasProducao', p.diasProducao.toLocaleString('pt-BR'));
+            const dias = Object.keys(p.diario).sort();
+            const labels = dias.map(d => { const [y,m,dia] = d.split('-'); return `${dia}/${m}`; });
+            const un = dias.map(d => p.diario[d].un);
+            const kg = dias.map(d => Math.round(p.diario[d].kg));
+            const med = dias.map(d => p.diario[d].un > 0 ? (p.diario[d].kg / p.diario[d].un) : 0);
+            const cx = dias.map(d => p.diario[d].cx);
+            createSimpleBarChart('chartProdUnidadesBar', labels, un, '#749d83', 'Unidades', false, ' un');
+            createSimpleBarChart('chartProdPesoBar', labels, kg, '#e3d39e', 'Peso (kg)', false, ' kg');
+            createSimpleBarChart('chartProdMediaBar', labels, med, '#9ca3af', 'Peso Médio (kg/unid)', true, ' kg');
+            createSimpleBarChart('chartProdCaixasBar', labels, cx, '#86b693', 'Caixas', false, ' cx');
+            const vn = Object.keys(p.vars); 
+            const vu = vn.map(v => p.vars[v].un);
+            const vkg = vn.map(v => Math.round(p.vars[v].kg));
+            const vmed = vn.map(v => p.vars[v].un > 0 ? (p.vars[v].kg / p.vars[v].un) : 0);
+            const vcx = vn.map(v => p.vars[v].cx);
+            const pieColors = ['#10b981', '#f59e0b', '#8b5cf6', '#f43f5e', '#14b8a6', '#f97316', '#84cc16', '#d946ef'];
+            createPieChart('chartProdUnidadesPie', vn, vu, pieColors);
+            createPieChart('chartProdPesoPie', vn, vkg, pieColors);
+            createPieChart('chartProdMediaPie', vn, vmed, pieColors, true);
+            createPieChart('chartProdCaixasPie', vn, vcx, pieColors);
+        }
+
+        function updateCalendarioView(cal) {
+            safeSetText('calTotalPlants', cal.totalP.toLocaleString('pt-BR'));
+            safeSetText('calTotalBlocks', cal.totalLotes.toLocaleString('pt-BR'));
+            const cycleEl = document.getElementById('calAvgCycle');
+            if (cycleEl) cycleEl.innerText = cal.avgCiclo !== null ? cal.avgCiclo : "--";
+            const tbody = document.getElementById('calTableBody');
+            if (tbody) {
+                tbody.innerHTML = cal.lista.length === 0 ? '<tr><td colspan="6" class="p-4 sm:p-6 text-center text-slate-400">Nenhum plantio encontrado.</td></tr>' : '';
+                cal.lista.forEach(b => {
+                    const tr = document.createElement('tr'); const s = (b.status||"").toUpperCase();
+                    let sc = 'bg-slate-100 text-slate-600'; if(s.includes('ANDAMENTO')) sc='bg-amber-100 text-amber-700'; else if(s.includes('CONCLUÍDO')) sc='bg-emerald-100 text-emerald-700';
+                    const vars = Array.from(b.variedades).join(", ") || "Não inf.";
+                    let gapHtml = `<span class="text-slate-400 font-medium italic">Pendente...</span>`;
+                    if (b.cicloRealDias !== null) gapHtml = `<span class="text-brand-600 font-bold">Ciclo de ${b.cicloRealDias} dias</span>`;
+                    tr.innerHTML = `<td class="p-4 sm:p-5 font-semibold text-slate-700 whitespace-nowrap">${b.dataPlantio ? b.dataPlantio.toLocaleDateString('pt-BR') : '-'}</td><td class="p-4 sm:p-5 font-semibold text-slate-700 whitespace-nowrap">${b.dataEst.toLocaleDateString('pt-BR')}</td><td class="p-4 sm:p-5 whitespace-nowrap"><div>${b.dataReal ? b.dataReal.toLocaleDateString('pt-BR') : '-'}</div><div class="text-[10px] mt-0.5">${gapHtml}</div></td><td class="p-4 sm:p-5"><div class="font-black text-slate-800">${b.bloco}</div><div class="text-[10px] text-slate-500">CICLO ${b.ciclo} • ${b.cultura} • <span class="text-brand-600 font-semibold">${vars}</span></div></td><td class="p-4 sm:p-5 text-center"><span class="px-3 py-1 rounded-lg text-[10px] font-black ${sc}">${b.status}</span></td><td class="p-4 sm:p-5 text-right font-black text-lg text-slate-800 whitespace-nowrap">${b.total.toLocaleString('pt-BR')} <span class="text-xs text-slate-400">un</span></td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        function createGroupedBarChart(id, data) {
+            const ctx = document.getElementById(id);
+            if (!ctx) return;
+            const ctx2d = ctx.getContext('2d'); if (charts[id]) charts[id].destroy();
+            charts[id] = new Chart(ctx2d, {
+                type: 'bar', data: { labels: data.map(d => d.label), datasets: [{ label: 'Unidades', data: data.map(d => d.unidades), backgroundColor: '#334155', borderRadius: 4, barPercentage: 0.95, categoryPercentage: 0.95 }, { label: 'Peso', data: data.map(d => d.peso), backgroundColor: '#38bdf8', borderRadius: 4, barPercentage: 0.95, categoryPercentage: 0.95 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: true, anchor: 'end', align: 'bottom', color: '#ffffff', backgroundColor: 'rgba(148, 163, 184, 0.6)', borderRadius: 4, padding: {top: 2, bottom: 2, left: 4, right: 4}, font: { weight: '800', size: 9 }, formatter: function(v, context) { if(!v) return ''; let formatted = Math.round(v).toLocaleString('pt-BR'); return context.dataset.label === 'Unidades' ? formatted + ' un' : formatted + ' kg'; } } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { display: false } }, x: { grid: { display: false } } } }
+            });
+        }
+
+        function createSimpleBarChart(id, labels, data, color, title, isFloat = false, suffix = '') {
+            const ctx = document.getElementById(id);
+            if (!ctx) return;
+            const ctx2d = ctx.getContext('2d'); if (charts[id]) charts[id].destroy();
+            let plotLabels = labels; let plotData = data; let plotColor = color;
+            if (labels.length === 0) { plotLabels = ["Sem Dados"]; plotData = [0]; plotColor = '#f1f5f9'; }
+            charts[id] = new Chart(ctx2d, {
+                type: 'bar', data: { labels: plotLabels, datasets: [{ label: title, data: plotData, backgroundColor: color, borderRadius: 4, barPercentage: 0.95, categoryPercentage: 0.95 }] },
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', padding: 12, cornerRadius: 8, callbacks: { label: function(context) { if (plotLabels[0] === "Sem Dados") return " Sem Dados"; let val = isFloat ? context.raw.toFixed(3) : Math.round(context.raw).toLocaleString('pt-BR'); return ` ${context.dataset.label}: ${val}`; } } },
+                        datalabels: { display: function(context) { return plotLabels[0] !== "Sem Dados"; }, anchor: 'end', align: 'bottom', color: '#ffffff', backgroundColor: 'rgba(148, 163, 184, 0.6)', borderRadius: 4, padding: {top: 2, bottom: 2, left: 4, right: 4}, font: { weight: '800', size: 10 }, formatter: function(value) { if (!value) return ''; let formatted = isFloat ? value.toFixed(3).replace('.', ',') : Math.round(value).toLocaleString('pt-BR'); return formatted + suffix; } } 
+                    }, 
+                    scales: { y: { display: false }, x: { grid: { display: false }, ticks: { display: plotLabels.length > 0 } } } 
+                }
+            });
+        }
+
+        function createPieChart(id, labels, data, colors, isFloat = false) {
+            const ctx = document.getElementById(id);
+            if (!ctx) return;
+            const ctx2d = ctx.getContext('2d'); if (charts[id]) charts[id].destroy();
+            let plotData = data; let plotLabels = labels; let plotColors = colors;
+            const total = data.reduce((a, b) => a + b, 0);
+            if (total === 0 || data.length === 0) { plotLabels = ["Sem Dados"]; plotData = [1]; plotColors = ['#f1f5f9']; }
+            charts[id] = new Chart(ctx2d, {
+                type: 'doughnut', data: { labels: plotLabels, datasets: [{ data: plotData, backgroundColor: plotColors, borderWidth: 2, borderColor: '#ffffff' }] },
+                options: { 
+                    responsive: true, maintainAspectRatio: false, cutout: '65%', layout: { padding: { right: 20 } },
+                    plugins: { 
+                        legend: { display: plotLabels[0] !== "Sem Dados", position: 'right', labels: { usePointStyle: true, boxWidth: 8, padding: 12, font: { size: 10, weight: '600', family: "'Plus Jakarta Sans', sans-serif" }, color: '#64748b' } }, 
+                        tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', padding: 12, cornerRadius: 8, callbacks: { label: function(c) { if (plotLabels[0] === "Sem Dados") return " Sem Dados"; let val = isFloat ? c.raw.toFixed(3) : Math.round(c.raw).toLocaleString('pt-BR'); let perc = total > 0 ? ((c.raw/total)*100).toFixed(1) + '%' : ''; return ` ${c.label}: ${val} (${perc})`; } } },
+                        datalabels: { display: function(context) { return plotLabels[0] !== "Sem Dados" && context.dataset.data[context.dataIndex] > 0; }, color: '#fff', backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 4, font: { weight: '800', size: 9 }, formatter: v => { if(!v || total === 0) return ''; return (v/total*100).toFixed(1)+'%'; } } 
+                    } 
+                }
+            });
+        }
+
+        function toggleStatusDropdown(t) { 
+            const menu = document.getElementById('statusMenu' + t);
+            if (menu) menu.classList.toggle('hidden'); 
+        }
+        
+        function updateStatusText(t) {
+            const cbs = document.querySelectorAll('.status-checkbox-' + t);
+            const sel = Array.from(cbs).filter(c => c.checked).map(c => c.value);
+            const label = document.getElementById('statusSelectedText' + t);
+            if (label) label.innerText = sel.length === cbs.length ? "Todos" : (sel.length === 0 ? "Nenhum" : sel.length + " selecionados");
+            if(t === 'Prev') applyFiltersPrev(); else if(t === 'Prod') applyFiltersProd(); else applyFiltersCal();
+        }
+
+        // Função para construir o Relatório Industrial e acionar a impressão
+        function prepareAndPrint() {
+            const now = new Date();
+            const dataFormatada = now.toLocaleDateString('pt-BR');
+            const horaFormatada = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            let activeTab = 'Prev';
+            let reportTitle = 'Visão de Previsões e Colheita Futura';
+            
+            if (!document.getElementById('viewProdutividade').classList.contains('hidden')) {
+                activeTab = 'Prod';
+                reportTitle = 'Desempenho e Produtividade Consolidada';
+            } else if (!document.getElementById('viewCalendario').classList.contains('hidden')) {
+                activeTab = 'Cal';
+                reportTitle = 'Calendário de Lotes e Plantios';
+            }
+
+            const getFilterText = (id) => {
+                const el = document.getElementById(id);
+                if (el.tagName === 'SELECT') return el.options[el.selectedIndex].text;
+                return el.value ? el.value.replace(' to ', ' até ') : 'Todo o Histórico';
+            };
+
+            const inputPeriodo = getFilterText('startMonth' + activeTab);
+            const selCultura = getFilterText('cropType' + activeTab);
+            const selVar = getFilterText('varietySearch' + activeTab);
+            const selBloco = getFilterText('blockSearch' + activeTab);
+            const selCiclo = getFilterText('cycleSearch' + activeTab);
+
+            let summaryHtml = '';
+            let detailHtml = '';
+
+            if (activeTab === 'Prev') {
+                const res = lastProcessedData.prev;
+                summaryHtml = `
+                    <table class="ind-table">
+                        <tr class="ind-title-row"><td colspan="6">2. Resumo de Projeção</td></tr>
+                        <tr class="ind-header ind-center">
+                            <td>Média Hist. (g)</td>
+                            <td>Ritmo Atual (un/dia)</td>
+                            <td>Realizado (Un)</td>
+                            <td>Realizado (Kg)</td>
+                            <td>Saldo Proj. (Un)</td>
+                            <td>Saldo Proj. (Kg)</td>
+                        </tr>
+                        <tr class="ind-center ind-bold" style="font-size: 10pt;">
+                            <td>${res.pesoAvg.toLocaleString('pt-BR')}</td>
+                            <td>${res.ritmo.toLocaleString('pt-BR')}</td>
+                            <td>${res.dUn.toLocaleString('pt-BR')}</td>
+                            <td>${Math.round(res.dKg).toLocaleString('pt-BR')}</td>
+                            <td>${Math.round(res.totalUn).toLocaleString('pt-BR')}</td>
+                            <td>${Math.round(res.totalKg).toLocaleString('pt-BR')}</td>
+                        </tr>
+                    </table>
+                `;
+
+                let rows = res.tabela.map(b => `
+                    <tr>
+                        <td>${b.dObj.toLocaleDateString('pt-BR')}</td>
+                        <td><b>${b.bloco}</b> - Ciclo ${b.ciclo} - ${b.cultura} (${b.variedade})</td>
+                        <td class="ind-center">${b.status}</td>
+                        <td class="ind-center">${Math.round(b.pEfet).toLocaleString('pt-BR')}</td>
+                        <td class="ind-right ind-bold">${Math.round(b.vKg).toLocaleString('pt-BR')}</td>
+                    </tr>
+                `).join('');
+                
+                let dailyRows = res.chartData.map(d => `
+                    <tr>
+                        <td>${d.label}</td>
+                        <td class="ind-center">${Math.round(d.unidades).toLocaleString('pt-BR')}</td>
+                        <td class="ind-right ind-bold">${Math.round(d.peso).toLocaleString('pt-BR')}</td>
+                    </tr>
+                `).join('');
+                
+                detailHtml = `
+                <div style="display: flex; gap: 15px; align-items: flex-start; width: 100%;">
+                    <div style="width: 65%;">
+                        <table class="ind-table" style="margin-bottom: 0;">
+                            <tr class="ind-title-row"><td colspan="5">3. Detalhamento de Lotes para Colheita</td></tr>
+                            <tr class="ind-header">
+                                <th style="width: 15%">Início Est.</th>
+                                <th style="width: 45%">Bloco / Especificação</th>
+                                <th class="ind-center" style="width: 15%">Status</th>
+                                <th class="ind-center" style="width: 15%">Estimativa (Un)</th>
+                                <th class="ind-right" style="width: 10%">Saldo (Kg)</th>
+                            </tr>
+                            ${rows || '<tr><td colspan="5" class="ind-center">Nenhum dado encontrado para os filtros selecionados.</td></tr>'}
+                        </table>
+                    </div>
+                    <div style="width: 35%;">
+                        <table class="ind-table" style="margin-bottom: 0;">
+                            <tr class="ind-title-row"><td colspan="3">4. Projeção Diária</td></tr>
+                            <tr class="ind-header">
+                                <th style="width: 40%">Data</th>
+                                <th class="ind-center" style="width: 30%">Unidades</th>
+                                <th class="ind-right" style="width: 30%">Kg</th>
+                            </tr>
+                            ${dailyRows || '<tr><td colspan="3" class="ind-center">Nenhum dado.</td></tr>'}
+                        </table>
+                    </div>
+                </div>`;
+                
+            } else if (activeTab === 'Prod') {
+                const p = lastProcessedData.prod;
+                summaryHtml = `
+                    <table class="ind-table">
+                        <tr class="ind-title-row"><td colspan="8">2. Resumo de Produtividade</td></tr>
+                        <tr class="ind-header ind-center">
+                            <td>Total Plantas</td>
+                            <td>Unidades Colhidas</td>
+                            <td>Peso Total (Kg)</td>
+                            <td>Média (g)</td>
+                            <td>Caixas</td>
+                            <td>Aproveitamento</td>
+                            <td>Perdas</td>
+                            <td>Dias de Produção</td>
+                        </tr>
+                        <tr class="ind-center ind-bold" style="font-size: 10pt;">
+                            <td>${p.dispTotalP.toLocaleString('pt-BR')}</td>
+                            <td>${p.totalU.toLocaleString('pt-BR')}</td>
+                            <td>${Math.round(p.totalKg).toLocaleString('pt-BR')}</td>
+                            <td>${p.pMedG.toLocaleString('pt-BR')}</td>
+                            <td>${p.totalCx.toLocaleString('pt-BR')}</td>
+                            <td>${p.percC}%</td>
+                            <td>${p.percPerda}%</td>
+                            <td>${p.diasProducao.toLocaleString('pt-BR')}</td>
+                        </tr>
+                    </table>
+                `;
+
+                const vn = Object.keys(p.vars);
+                let rows = vn.map(v => `
+                    <tr>
+                        <td class="ind-bold">${v}</td>
+                        <td class="ind-right">${p.vars[v].un.toLocaleString('pt-BR')}</td>
+                        <td class="ind-right">${Math.round(p.vars[v].kg).toLocaleString('pt-BR')}</td>
+                        <td class="ind-right">${(p.vars[v].un > 0 ? (p.vars[v].kg / p.vars[v].un) : 0).toFixed(3)}</td>
+                        <td class="ind-right">${p.vars[v].cx.toLocaleString('pt-BR')}</td>
+                    </tr>
+                `).join('');
+                
+                detailHtml = `
+                <table class="ind-table">
+                    <tr class="ind-title-row"><td colspan="5">3. Desempenho por Variedade Comercial</td></tr>
+                    <tr class="ind-header">
+                        <th style="width: 40%">Variedade</th>
+                        <th class="ind-right" style="width: 15%">Unidades</th>
+                        <th class="ind-right" style="width: 15%">Peso (Kg)</th>
+                        <th class="ind-right" style="width: 15%">Média (kg/un)</th>
+                        <th class="ind-right" style="width: 15%">Caixas</th>
+                    </tr>
+                    ${rows || '<tr><td colspan="5" class="ind-center">Nenhum dado encontrado para os filtros selecionados.</td></tr>'}
+                </table>`;
+                
+            } else if (activeTab === 'Cal') {
+                const cal = lastProcessedData.cal;
+                summaryHtml = `
+                    <table class="ind-table">
+                        <tr class="ind-title-row"><td colspan="3">2. Resumo de Ocupação</td></tr>
+                        <tr class="ind-header ind-center">
+                            <td>Total de Plantas Registradas</td>
+                            <td>Total de Lotes Consolidados</td>
+                            <td>Ciclo Real Médio (dias no campo)</td>
+                        </tr>
+                        <tr class="ind-center ind-bold" style="font-size: 10pt;">
+                            <td>${cal.totalP.toLocaleString('pt-BR')}</td>
+                            <td>${cal.totalLotes.toLocaleString('pt-BR')}</td>
+                            <td>${cal.avgCiclo !== null ? cal.avgCiclo : '--'}</td>
+                        </tr>
+                    </table>
+                `;
+
+                let rows = cal.lista.map(b => {
+                    const vars = Array.from(b.variedades).join(", ") || "Não inf.";
+                    return `
+                    <tr>
+                        <td class="ind-center">${b.dataPlantio ? b.dataPlantio.toLocaleDateString('pt-BR') : '-'}</td>
+                        <td class="ind-center">${b.dataEst.toLocaleDateString('pt-BR')}</td>
+                        <td class="ind-center">${b.dataReal ? b.dataReal.toLocaleDateString('pt-BR') : '-'} ${b.cicloRealDias !== null ? `<br><span style="font-size:6pt;color:#555">(${b.cicloRealDias} dias)</span>` : ''}</td>
+                        <td><b>${b.bloco}</b> - Ciclo ${b.ciclo}<br><span style="font-size:7pt;color:#555">${b.cultura} (${vars})</span></td>
+                        <td class="ind-center">${b.status}</td>
+                        <td class="ind-right ind-bold">${b.total.toLocaleString('pt-BR')}</td>
+                    </tr>`;
+                }).join('');
+
+                detailHtml = `
+                <table class="ind-table">
+                    <tr class="ind-title-row"><td colspan="6">3. Mapa de Lotes e Plantios</td></tr>
+                    <tr class="ind-header">
+                        <th class="ind-center" style="width: 12%">Plantio</th>
+                        <th class="ind-center" style="width: 12%">Início Est.</th>
+                        <th class="ind-center" style="width: 15%">Início Real</th>
+                        <th style="width: 35%">Bloco / Especificação</th>
+                        <th class="ind-center" style="width: 14%">Status</th>
+                        <th class="ind-right" style="width: 12%">Plantas</th>
+                    </tr>
+                    ${rows || '<tr><td colspan="6" class="ind-center">Nenhum plantio encontrado.</td></tr>'}
+                </table>`;
+            }
+
+            const printContainer = document.getElementById('printDocumentContainer');
+            printContainer.innerHTML = `
+                <table class="ind-table" style="border: 1.5px solid #000; margin-bottom: 5px;">
+                    <tr>
+                        <td rowspan="2" style="width: 15%; text-align: center; vertical-align: middle; padding: 5px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                            <img src="https://i.imgur.com/tSv2eig.png" alt="Logo Oásis" style="max-height: 45px; max-width: 100%; display: block; margin: 0 auto;">
+                        </td>
+                        <td rowspan="2" style="width: 60%; text-align: center; font-size: 12pt; font-weight: bold; color: #000;">
+                            RELATÓRIO DE GESTÃO E PRODUTIVIDADE<br>
+                            <span style="font-size: 9pt; font-weight: normal;">${reportTitle}</span>
+                        </td>
+                        <td style="width: 25%; background-color: #f1f5f9; font-weight: bold; font-size: 7pt; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                            DATA DE EMISSÃO
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: bold; text-align: center; font-size: 8pt;">${dataFormatada} às ${horaFormatada}</td>
+                    </tr>
+                    <tr style="background-color: #f1f5f9; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                        <td colspan="3" style="font-size: 6.5pt; font-weight: bold; color: #334155; padding: 2px 5px;">
+                            SISTEMA DE PLANEJAMENTO E GESTÃO - FAZENDA OÁSIS
+                        </td>
+                    </tr>
+                </table>
+
+                <table class="ind-table">
+                    <tr class="ind-title-row"><td colspan="4">1. Parâmetros da Análise (Filtros)</td></tr>
+                    <tr>
+                        <th class="ind-header" style="width: 20%">Período:</th>
+                        <td style="width: 30%">${inputPeriodo}</td>
+                        <th class="ind-header" style="width: 20%">Cultura:</th>
+                        <td style="width: 30%">${selCultura}</td>
+                    </tr>
+                    <tr>
+                        <th class="ind-header">Bloco:</th>
+                        <td>${selBloco}</td>
+                        <th class="ind-header">Variedade:</th>
+                        <td>${selVar}</td>
+                    </tr>
+                    <tr>
+                        <th class="ind-header">Ciclo:</th>
+                        <td colspan="3">${selCiclo}</td>
+                    </tr>
+                </table>
+
+                ${summaryHtml}
+                
+                ${detailHtml}
+
+                <div style="font-size: 6.5pt; color: #555; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 3px;">
+                    * Relatório gerado automaticamente pelo Sistema de Planejamento e Gestão (SPG) Oásis.<br>
+                    * Os resultados apresentados baseiam-se consolidações dos parâmetros acima informados no momento da geração. Uso interno.
+                </div>
+            `;
+
+            setTimeout(() => { window.print(); }, 100);
+        }
+    </script>
+</body>
+</html>
