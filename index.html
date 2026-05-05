@@ -65,12 +65,17 @@
             border: 1px solid #e2e8f0 !important;
             border-radius: 12px !important;
             overflow: hidden;
-            display: flex !important;
-            flex-direction: row !important;
             width: auto !important;
             max-width: 95vw !important;
         }
         
+        /* Aplica o layout flex apenas quando está visível ou a ser medido pelo sistema */
+        .flatpickr-calendar.open,
+        .flatpickr-calendar[style*="display: block"] {
+            display: flex !important;
+            flex-direction: row !important;
+        }
+
         .flatpickr-shortcuts-sidebar {
             width: 180px;
             background: #f8fafc;
@@ -135,7 +140,10 @@
         .btn-apply:hover { background: #1e293b; }
 
         @media (max-width: 768px) {
-            .flatpickr-calendar { flex-direction: column !important; }
+            .flatpickr-calendar.open,
+            .flatpickr-calendar[style*="display: block"] { 
+                flex-direction: column !important; 
+            }
             .flatpickr-shortcuts-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; overflow-x: auto; padding: 8px; gap: 4px; }
             .shortcut-item { white-space: nowrap; flex-shrink: 0; margin-bottom: 0; }
             .shortcut-item svg { display: none; }
@@ -223,7 +231,7 @@
                     </div>
 
                     <div class="flex items-center">
-                        <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-brand-600 focus:ring-brand-500 border-slate-300 rounded cursor-pointer transition-colors">
+                        <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 accent-brand-600 focus:ring-brand-500 border-slate-300 rounded cursor-pointer transition-colors">
                         <label for="remember-me" class="ml-2 block text-[12px] font-semibold text-slate-600 cursor-pointer">
                             Mantenha-me conectado
                         </label>
@@ -282,8 +290,11 @@
                 <button onclick="switchTab('calendario')" id="tab-calendario" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2">
                     <i data-lucide="list-todo" class="w-4 h-4"></i> Calendário 
                 </button>
-                <button onclick="switchTab('ranking')" id="tab-ranking" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2 text-brand-600">
+                <button onclick="switchTab('ranking')" id="tab-ranking" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2">
                     <i data-lucide="trophy" class="w-4 h-4"></i> Ranking 
+                </button>
+                <button onclick="switchTab('analise')" id="tab-analise" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2 text-indigo-600">
+                    <i data-lucide="microscope" class="w-4 h-4"></i> Análise Avançada 
                 </button>
             </div>
 
@@ -291,68 +302,99 @@
                 
                 <!-- VIEW 1: PREVISÕES -->
                 <div id="viewPrevisao" class="flex flex-col gap-6 animate-fade-in-down">
-                    
                     <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,2.5fr)_160px_80px_100px_145px] gap-4 items-end">
-                            <div class="sm:col-span-2 md:col-span-2 xl:col-span-1">
+                        <div class="flex flex-wrap gap-3 sm:gap-4 items-end">
+                            <div class="flex-auto w-full sm:w-auto min-w-[200px] lg:max-w-[260px] transition-all duration-300">
                                 <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Período</label>
-                                <input type="text" id="startMonthPrev" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm outline-none font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
+                                <input type="text" id="startMonthPrev" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none transition-colors focus:ring-2 focus:ring-brand-500/50 bg-white" placeholder="Período automático">
                             </div>
-                            <div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
                                 <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Bloco</label>
-                                <select id="blockSearchPrev" class="w-full p-2 border border-slate-200 rounded-xl text-sm outline-none font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleBlockChange('Prev')">
-                                    <option value="">Todos</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
-                                <select id="cycleSearchPrev" class="w-full p-2 border border-slate-200 rounded-xl text-sm outline-none font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersPrev()">
-                                    <option value="">Todos</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
-                                <select id="cropTypePrev" class="w-full p-2 border border-slate-200 rounded-xl text-sm outline-none font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleCropChange('Prev')">
-                                    <option value="">Todas</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
-                                <select id="varietySearchPrev" class="w-full p-2 border border-slate-200 rounded-xl text-sm outline-none font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersPrev()">
-                                    <option value="">Todas</option>
-                                </select>
-                            </div>
-                            <div class="sm:col-span-2 md:col-span-2 xl:col-span-1 relative" id="customStatusDropdownPrev">
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
-                                <div class="w-full p-2 border border-slate-200 rounded-xl text-sm bg-white outline-none font-semibold cursor-pointer flex justify-between items-center h-[38px]" onclick="toggleStatusDropdown('Prev')">
-                                    <span id="statusSelectedTextPrev" class="truncate">Todos</span>
-                                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0 ml-2"></i>
-                                </div>
-                                <div id="statusMenuPrev" class="hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float top-full left-0 overflow-hidden">
-                                    <div class="max-h-60 overflow-y-auto p-2" id="statusOptionsListPrev">
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
-                                            <input type="checkbox" value="Concluído" class="status-checkbox-Prev" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold">Concluído</span>
-                                        </label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
-                                            <input type="checkbox" value="Perda total" class="status-checkbox-Prev" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold">Perda total</span>
-                                        </label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
-                                            <input type="checkbox" value="Pendente" class="status-checkbox-Prev" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold">Pendente</span>
-                                        </label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
-                                            <input type="checkbox" value="Em andamento" class="status-checkbox-Prev" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold">Em andamento</span>
-                                        </label>
+                                <div class="relative" id="container-blockSearchPrev">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('blockSearchPrev')">
+                                        <span id="text-blockSearchPrev" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-blockSearchPrev" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-blockSearchPrev"></div>
                                     </div>
                                 </div>
                             </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Aproveit. (%)</label>
-                                <input type="number" id="deliveryRatePrev" value="50" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50" oninput="applyFiltersPrev()">
+                            <div class="flex-auto w-full sm:w-auto min-w-[100px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
+                                <div class="relative" id="container-cycleSearchPrev">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cycleSearchPrev')">
+                                        <span id="text-cycleSearchPrev" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cycleSearchPrev" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cycleSearchPrev"></div>
+                                    </div>
+                                </div>
                             </div>
-                            <button type="button" onclick="clearFilters('Prev')" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
+                                <div class="relative" id="container-cropTypePrev">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cropTypePrev')">
+                                        <span id="text-cropTypePrev" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cropTypePrev" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cropTypePrev"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[140px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
+                                <div class="relative" id="container-varietySearchPrev">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('varietySearchPrev')">
+                                        <span id="text-varietySearchPrev" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-varietySearchPrev" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-varietySearchPrev"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[160px] transition-all duration-300 relative" id="container-statusPrev">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
+                                <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('statusPrev')">
+                                    <span id="text-statusPrev" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                </div>
+                                <div id="menu-statusPrev" class="dropdown-menu hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float top-full right-0 sm:left-0 overflow-hidden">
+                                    <div class="max-h-60 overflow-y-auto p-2" id="list-statusPrev">
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Concluído" class="checkbox-statusPrev accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold text-slate-600">Concluído</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Prev', 'Concluído')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Perda total" class="checkbox-statusPrev accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold text-slate-600">Perda total</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Prev', 'Perda total')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Pendente" class="checkbox-statusPrev accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold text-slate-600">Pendente</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Prev', 'Pendente')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Em andamento" class="checkbox-statusPrev accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Prev')"> <span class="text-sm font-semibold text-slate-600">Em andamento</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Prev', 'Em andamento')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[90px] lg:max-w-[120px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Aproveit.(%)</label>
+                                <input type="number" id="deliveryRatePrev" value="50" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold transition-colors focus:ring-2 focus:ring-brand-500/50 bg-white" oninput="applyFiltersPrev()">
+                            </div>
+                            <button type="button" onclick="clearFilters('Prev')" class="flex-auto sm:flex-none shrink-0 min-w-[100px] w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
                                 <i data-lucide="eraser" class="w-4 h-4"></i> Limpar
                             </button>
-                            <button type="button" onclick="fetchData()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
+                            <button type="button" onclick="fetchData()" class="flex-auto sm:flex-none shrink-0 min-w-[120px] w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
                                 <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
                             </button>
                         </div>
@@ -427,45 +469,93 @@
                 <!-- VIEW 2: PRODUTIVIDADE -->
                 <div id="viewProdutividade" class="hidden flex-col gap-6 animate-fade-in-down">
                     <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,2.5fr)_160px_100px_145px] gap-4 items-end">
-                            <div class="sm:col-span-2 md:col-span-2 xl:col-span-1">
+                        <div class="flex flex-wrap gap-3 sm:gap-4 items-end">
+                            <div class="flex-auto w-full sm:w-auto min-w-[200px] lg:max-w-[260px] transition-all duration-300">
                                 <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Período</label>
-                                <input type="text" id="startMonthProd" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
+                                <input type="text" id="startMonthProd" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none transition-colors focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
                             </div>
-                            <div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
                                 <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Bloco</label>
-                                <select id="blockSearchProd" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleBlockChange('Prod')"><option value="">Todos</option></select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
-                                <select id="cycleSearchProd" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersProd()"><option value="">Todos</option></select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
-                                <select id="cropTypeProd" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleCropChange('Prod')"><option value="">Todas</option></select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
-                                <select id="varietySearchProd" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersProd()"><option value="">Todas</option></select>
-                            </div>
-                            <div class="sm:col-span-2 md:col-span-2 xl:col-span-1 relative" id="customStatusDropdownProd">
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
-                                <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer h-[38px] flex justify-between items-center" onclick="toggleStatusDropdown('Prod')">
-                                    <span id="statusSelectedTextProd" class="truncate">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0 ml-2"></i>
-                                </div>
-                                <div id="statusMenuProd" class="hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border rounded-2xl shadow-float p-2 overflow-hidden">
-                                    <div class="max-h-60 overflow-y-auto">
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Prod" value="Concluído" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold">Concluído</span></label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Prod" value="Perda total" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold">Perda total</span></label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Prod" value="Pendente" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold">Pendente</span></label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Prod" value="Em andamento" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold">Em andamento</span></label>
+                                <div class="relative" id="container-blockSearchProd">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('blockSearchProd')">
+                                        <span id="text-blockSearchProd" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-blockSearchProd" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-blockSearchProd"></div>
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" onclick="clearFilters('Prod')" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
+                            <div class="flex-auto w-full sm:w-auto min-w-[100px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
+                                <div class="relative" id="container-cycleSearchProd">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cycleSearchProd')">
+                                        <span id="text-cycleSearchProd" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cycleSearchProd" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cycleSearchProd"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
+                                <div class="relative" id="container-cropTypeProd">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cropTypeProd')">
+                                        <span id="text-cropTypeProd" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cropTypeProd" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cropTypeProd"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[140px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
+                                <div class="relative" id="container-varietySearchProd">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('varietySearchProd')">
+                                        <span id="text-varietySearchProd" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-varietySearchProd" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-varietySearchProd"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[160px] transition-all duration-300 relative" id="container-statusProd">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
+                                <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('statusProd')">
+                                    <span id="text-statusProd" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                </div>
+                                <div id="menu-statusProd" class="dropdown-menu hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border rounded-2xl shadow-float top-full right-0 sm:left-0 overflow-hidden">
+                                    <div class="max-h-60 overflow-y-auto p-2" id="list-statusProd">
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Concluído" class="checkbox-statusProd accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold text-slate-600">Concluído</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Prod', 'Concluído')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Perda total" class="checkbox-statusProd accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold text-slate-600">Perda total</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Prod', 'Perda total')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Pendente" class="checkbox-statusProd accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold text-slate-600">Pendente</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Prod', 'Pendente')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Em andamento" class="checkbox-statusProd accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Prod')"> <span class="text-sm font-semibold text-slate-600">Em andamento</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Prod', 'Em andamento')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearFilters('Prod')" class="flex-auto sm:flex-none shrink-0 min-w-[100px] w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
                                 <i data-lucide="eraser" class="w-4 h-4"></i> Limpar
                             </button>
-                            <button type="button" onclick="fetchData()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
+                            <button type="button" onclick="fetchData()" class="flex-auto sm:flex-none shrink-0 min-w-[120px] w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
                                 <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
                             </button>
                         </div>
@@ -554,43 +644,93 @@
                 <!-- VIEW 3: CALENDÁRIO -->
                 <div id="viewCalendario" class="hidden flex-col gap-6 animate-fade-in-down">
                     <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,2.5fr)_160px_100px_145px] gap-4 items-end">
-                            <div class="sm:col-span-2 md:col-span-2 xl:col-span-1">
+                        <div class="flex flex-wrap gap-3 sm:gap-4 items-end">
+                            <div class="flex-auto w-full sm:w-auto min-w-[200px] lg:max-w-[260px] transition-all duration-300">
                                 <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Período Estimado</label>
-                                <input type="text" id="startMonthCal" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
+                                <input type="text" id="startMonthCal" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none transition-colors focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
                             </div>
-                            <div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
                                 <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Bloco</label>
-                                <select id="blockSearchCal" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleBlockChange('Cal')"><option value="">Todos</option></select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
-                                <select id="cycleSearchCal" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersCal()"><option value="">Todos</option></select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
-                                <select id="cropTypeCal" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleCropChange('Cal')"><option value="">Todas</option></select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
-                                <select id="varietySearchCal" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersCal()"><option value="">Todas</option></select>
-                            </div>
-                            <div class="sm:col-span-2 md:col-span-2 xl:col-span-1 relative" id="customStatusDropdownCal">
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
-                                <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer h-[38px] flex justify-between items-center" onclick="toggleStatusDropdown('Cal')"><span id="statusSelectedTextCal" class="truncate">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0 ml-2"></i></div>
-                                <div id="statusMenuCal" class="hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
-                                    <div class="max-h-60 overflow-y-auto">
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Cal" value="Concluído" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold">Concluído</span></label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Cal" value="Perda total" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold">Perda total</span></label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Cal" value="Pendente" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold">Pendente</span></label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Cal" value="Em andamento" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold">Em andamento</span></label>
+                                <div class="relative" id="container-blockSearchCal">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('blockSearchCal')">
+                                        <span id="text-blockSearchCal" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-blockSearchCal" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-blockSearchCal"></div>
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" onclick="clearFilters('Cal')" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
+                            <div class="flex-auto w-full sm:w-auto min-w-[100px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
+                                <div class="relative" id="container-cycleSearchCal">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cycleSearchCal')">
+                                        <span id="text-cycleSearchCal" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cycleSearchCal" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cycleSearchCal"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
+                                <div class="relative" id="container-cropTypeCal">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cropTypeCal')">
+                                        <span id="text-cropTypeCal" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cropTypeCal" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cropTypeCal"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[140px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
+                                <div class="relative" id="container-varietySearchCal">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('varietySearchCal')">
+                                        <span id="text-varietySearchCal" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-varietySearchCal" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-varietySearchCal"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[160px] transition-all duration-300 relative" id="container-statusCal">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
+                                <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('statusCal')">
+                                    <span id="text-statusCal" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                </div>
+                                <div id="menu-statusCal" class="dropdown-menu hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border rounded-2xl shadow-float top-full right-0 sm:left-0 overflow-hidden">
+                                    <div class="max-h-60 overflow-y-auto p-2" id="list-statusCal">
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Concluído" class="checkbox-statusCal accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold text-slate-600">Concluído</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Cal', 'Concluído')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Perda total" class="checkbox-statusCal accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold text-slate-600">Perda total</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Cal', 'Perda total')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Pendente" class="checkbox-statusCal accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold text-slate-600">Pendente</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Cal', 'Pendente')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Em andamento" class="checkbox-statusCal accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Cal')"> <span class="text-sm font-semibold text-slate-600">Em andamento</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Cal', 'Em andamento')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearFilters('Cal')" class="flex-auto sm:flex-none shrink-0 min-w-[100px] w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
                                 <i data-lucide="eraser" class="w-4 h-4"></i> Limpar
                             </button>
-                            <button type="button" onclick="fetchData()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
+                            <button type="button" onclick="fetchData()" class="flex-auto sm:flex-none shrink-0 min-w-[120px] w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
                                 <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
                             </button>
                         </div>
@@ -632,43 +772,93 @@
                 <!-- VIEW 4: RANKING -->
                 <div id="viewRanking" class="hidden flex-col gap-6 animate-fade-in-down">
                     <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-[240px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,2.5fr)_160px_100px_145px] gap-4 items-end">
-                            <div class="sm:col-span-2 md:col-span-2 xl:col-span-1">
+                        <div class="flex flex-wrap gap-3 sm:gap-4 items-end">
+                            <div class="flex-auto w-full sm:w-auto min-w-[200px] lg:max-w-[260px] transition-all duration-300">
                                 <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Período de Colheita</label>
-                                <input type="text" id="startMonthRank" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
+                                <input type="text" id="startMonthRank" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none transition-colors focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
                             </div>
-                            <div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
                                 <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Bloco</label>
-                                <select id="blockSearchRank" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleBlockChange('Rank')"><option value="">Todos</option></select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
-                                <select id="cycleSearchRank" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersRank()"><option value="">Todos</option></select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
-                                <select id="cropTypeRank" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="handleCropChange('Rank')"><option value="">Todas</option></select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
-                                <select id="varietySearchRank" class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate" onchange="applyFiltersRank()"><option value="">Todas</option></select>
-                            </div>
-                            <div class="sm:col-span-2 md:col-span-2 xl:col-span-1 relative" id="customStatusDropdownRank">
-                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
-                                <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer h-[38px] flex justify-between items-center" onclick="toggleStatusDropdown('Rank')"><span id="statusSelectedTextRank" class="truncate">Concluído</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0 ml-2"></i></div>
-                                <div id="statusMenuRank" class="hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border rounded-2xl shadow-float p-2 overflow-hidden">
-                                    <div class="max-h-60 overflow-y-auto">
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Rank" value="Concluído" checked onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold">Concluído</span></label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Rank" value="Perda total" onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold">Perda total</span></label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Rank" value="Pendente" onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold">Pendente</span></label>
-                                        <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" class="status-checkbox-Rank" value="Em andamento" onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold">Em andamento</span></label>
+                                <div class="relative" id="container-blockSearchRank">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('blockSearchRank')">
+                                        <span id="text-blockSearchRank" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-blockSearchRank" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-blockSearchRank"></div>
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" onclick="clearFilters('Rank')" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
+                            <div class="flex-auto w-full sm:w-auto min-w-[100px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
+                                <div class="relative" id="container-cycleSearchRank">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cycleSearchRank')">
+                                        <span id="text-cycleSearchRank" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cycleSearchRank" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cycleSearchRank"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
+                                <div class="relative" id="container-cropTypeRank">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cropTypeRank')">
+                                        <span id="text-cropTypeRank" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cropTypeRank" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cropTypeRank"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[140px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
+                                <div class="relative" id="container-varietySearchRank">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('varietySearchRank')">
+                                        <span id="text-varietySearchRank" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-varietySearchRank" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-varietySearchRank"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[160px] transition-all duration-300 relative" id="container-statusRank">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
+                                <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('statusRank')">
+                                    <span id="text-statusRank" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Concluído</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                </div>
+                                <div id="menu-statusRank" class="dropdown-menu hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border rounded-2xl shadow-float top-full right-0 sm:left-0 overflow-hidden">
+                                    <div class="max-h-60 overflow-y-auto p-2" id="list-statusRank">
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Concluído" class="checkbox-statusRank accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold text-slate-600">Concluído</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Rank', 'Concluído')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Perda total" class="checkbox-statusRank accent-brand-600 w-4 h-4 shrink-0" onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold text-slate-600">Perda total</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Rank', 'Perda total')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Pendente" class="checkbox-statusRank accent-brand-600 w-4 h-4 shrink-0" onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold text-slate-600">Pendente</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Rank', 'Pendente')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Em andamento" class="checkbox-statusRank accent-brand-600 w-4 h-4 shrink-0" onchange="updateStatusText('Rank')"> <span class="text-sm font-semibold text-slate-600">Em andamento</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Rank', 'Em andamento')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearFilters('Rank')" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px] flex-auto sm:flex-none shrink-0 min-w-[100px] sm:w-auto">
                                 <i data-lucide="eraser" class="w-4 h-4"></i> Limpar
                             </button>
-                            <button type="button" onclick="fetchData()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
+                            <button type="button" onclick="fetchData()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all flex-auto sm:flex-none shrink-0 min-w-[120px] sm:w-auto">
                                 <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
                             </button>
                         </div>
@@ -768,11 +958,187 @@
                     </div>
                 </div>
 
+                <!-- VIEW 5: ANÁLISE AVANÇADA (NOVA) -->
+                <div id="viewAnalise" class="hidden flex-col gap-6 animate-fade-in-down">
+                    <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
+                        <div class="flex flex-wrap gap-3 sm:gap-4 items-end">
+                            <div class="flex-auto w-full sm:w-auto min-w-[200px] lg:max-w-[260px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Período da Colheita</label>
+                                <input type="text" id="startMonthAnalise" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none transition-colors focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Bloco</label>
+                                <div class="relative" id="container-blockSearchAnalise">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('blockSearchAnalise')">
+                                        <span id="text-blockSearchAnalise" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-blockSearchAnalise" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-blockSearchAnalise"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[100px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
+                                <div class="relative" id="container-cycleSearchAnalise">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cycleSearchAnalise')">
+                                        <span id="text-cycleSearchAnalise" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cycleSearchAnalise" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cycleSearchAnalise"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
+                                <div class="relative" id="container-cropTypeAnalise">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cropTypeAnalise')">
+                                        <span id="text-cropTypeAnalise" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cropTypeAnalise" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cropTypeAnalise"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[140px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
+                                <div class="relative" id="container-varietySearchAnalise">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('varietySearchAnalise')">
+                                        <span id="text-varietySearchAnalise" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-varietySearchAnalise" class="dropdown-menu hidden absolute z-50 w-full min-w-[200px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-varietySearchAnalise"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[160px] transition-all duration-300 relative" id="container-statusAnalise">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Status</label>
+                                <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('statusAnalise')">
+                                    <span id="text-statusAnalise" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Concluído</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                </div>
+                                <div id="menu-statusAnalise" class="dropdown-menu hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border rounded-2xl shadow-float top-full right-0 sm:left-0 overflow-hidden">
+                                    <div class="max-h-60 overflow-y-auto p-2" id="list-statusAnalise">
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Concluído" class="checkbox-statusAnalise accent-brand-600 w-4 h-4 shrink-0" checked onchange="updateStatusText('Analise')"> <span class="text-sm font-semibold text-slate-600">Concluído</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Analise', 'Concluído')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Perda total" class="checkbox-statusAnalise accent-brand-600 w-4 h-4 shrink-0" onchange="updateStatusText('Analise')"> <span class="text-sm font-semibold text-slate-600">Perda total</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Analise', 'Perda total')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Pendente" class="checkbox-statusAnalise accent-brand-600 w-4 h-4 shrink-0" onchange="updateStatusText('Analise')"> <span class="text-sm font-semibold text-slate-600">Pendente</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Analise', 'Pendente')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                        <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                                            <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
+                                                <input type="checkbox" value="Em andamento" class="checkbox-statusAnalise accent-brand-600 w-4 h-4 shrink-0" onchange="updateStatusText('Analise')"> <span class="text-sm font-semibold text-slate-600">Em andamento</span>
+                                            </label>
+                                            <button type="button" onclick="selectOnlyStatus('Analise', 'Em andamento')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearFilters('Analise')" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px] flex-auto sm:flex-none shrink-0 min-w-[100px] sm:w-auto">
+                                <i data-lucide="eraser" class="w-4 h-4"></i> Limpar
+                            </button>
+                            <button type="button" onclick="fetchData()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all flex-auto sm:flex-none shrink-0 min-w-[120px] sm:w-auto">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cards de Resumo Inteligente -->
+                    <div class="print-hide grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
+                        <div class="bg-white p-5 rounded-[24px] shadow-soft border border-slate-100 relative overflow-hidden flex flex-col justify-center">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><i data-lucide="target" class="w-3 h-3"></i> Acurácia de Volume</span>
+                            <div class="mt-1 flex items-baseline gap-2">
+                                <p id="anaAcuraciaVol" class="text-3xl font-black text-slate-800">0%</p>
+                            </div>
+                            <p class="text-[10px] text-slate-500 font-medium mt-1">Colhido vs. Projetado inicial</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-[24px] shadow-soft border border-slate-100 relative overflow-hidden flex flex-col justify-center">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> Acurácia de Data</span>
+                            <div class="mt-1 flex items-baseline gap-2">
+                                <p id="anaAcuraciaData" class="text-3xl font-black text-slate-800">0</p>
+                                <span class="text-xs font-bold text-slate-400 uppercase">dias</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500 font-medium mt-1">Média de atraso para o 1º corte</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-[24px] shadow-soft border border-slate-100 relative overflow-hidden flex flex-col justify-center">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><i data-lucide="timer" class="w-3 h-3"></i> Janela de Corte Média</span>
+                            <div class="mt-1 flex items-baseline gap-2">
+                                <p id="anaJanelaMédia" class="text-3xl font-black text-slate-800">0</p>
+                                <span class="text-xs font-bold text-slate-400 uppercase">dias</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500 font-medium mt-1">Dias únicos com colheita</p>
+                        </div>
+                        <div class="bg-indigo-50 p-5 rounded-[24px] shadow-soft border border-indigo-100 relative overflow-hidden flex flex-col justify-center">
+                            <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest flex items-center gap-1"><i data-lucide="tractor" class="w-3 h-3"></i> Produtividade Relativa</span>
+                            <div class="mt-1 flex items-baseline gap-2">
+                                <p id="anaProdRelativa" class="text-3xl font-black text-indigo-700">0</p>
+                                <span class="text-xs font-bold text-indigo-500 uppercase">kg</span>
+                            </div>
+                            <p class="text-[10px] text-indigo-600 font-medium mt-1">Para cada 1.000 plantas</p>
+                        </div>
+                    </div>
+
+                    <!-- Layout Principal Analise -->
+                    <div class="print-hide grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+                        
+                        <!-- Evolução por Ciclo -->
+                        <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col h-[380px]">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <h3 class="text-sm font-black text-slate-800 uppercase">Histórico Evolutivo do Solo</h3>
+                                    <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Evolução do Peso Médio (g) por Ciclo</p>
+                                </div>
+                            </div>
+                            <div class="flex-1 relative w-full"><canvas id="analiseEvolucaoChart"></canvas></div>
+                        </div>
+
+                        <!-- Curva de Sazonalidade -->
+                        <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col h-[380px]">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <h3 class="text-sm font-black text-slate-800 uppercase">Curva de Sazonalidade (Mensal)</h3>
+                                    <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Peso Médio por Mês de Colheita</p>
+                                </div>
+                            </div>
+                            <div class="flex-1 relative w-full"><canvas id="analiseSazonalChart"></canvas></div>
+                        </div>
+
+                        <!-- Ofensores de Perda -->
+                        <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col h-[340px]">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <h3 class="text-sm font-black text-slate-800 uppercase">Mapa de Ofensores de Perda</h3>
+                                    <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Volumes absolutos de perda (un) por Variedade</p>
+                                </div>
+                            </div>
+                            <div class="flex-1 relative w-full flex justify-center"><canvas id="analisePerdasChart"></canvas></div>
+                        </div>
+
+                        <!-- Janela de Corte (Top Lentidão) -->
+                        <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col h-[340px]">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <h3 class="text-sm font-black text-slate-800 uppercase">Gargalos: Duração da Colheita</h3>
+                                    <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Blocos com mais dias únicos de colheita</p>
+                                </div>
+                            </div>
+                            <div class="flex-1 relative w-full"><canvas id="analiseJanelaChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
-
-        <!-- RECIPIENTE EXCLUSIVO PARA IMPRESSÃO -->
-        <div id="printDocumentContainer"></div>
 
         <!-- LOADING MODAL -->
         <div id="loadingModal" class="fixed inset-0 bg-slate-900/40 z-[80] hidden flex justify-center items-center backdrop-blur-sm">
@@ -782,6 +1148,9 @@
             </div>
         </div>
     </div>
+
+    <!-- RECIPIENTE EXCLUSIVO PARA IMPRESSÃO -->
+    <div id="printDocumentContainer"></div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxc6aGG5-YwKvuocpxPzTu8EQj1q0Wiu4PhuULEiDItBsGN6oprC14lFJjJYTYwbr050A/exec"; 
@@ -793,7 +1162,7 @@
         let allVarieties = new Set();
         let allBlocks = new Set();
         let allCycles = new Set();
-        let lastProcessedData = { prev: null, prod: null, cal: null, rank: null }; 
+        let lastProcessedData = { prev: null, prod: null, cal: null, rank: null, analise: null }; 
         const nomesDosMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
         Chart.register(ChartDataLabels);
@@ -809,7 +1178,6 @@
         document.addEventListener("DOMContentLoaded", () => {
             lucide.createIcons();
             
-            // Verifica se a sessão já está logada (Session ou Local)
             if (sessionStorage.getItem('spg_logged_in') === 'true' || localStorage.getItem('spg_logged_in') === 'true') {
                 showApp();
             } else {
@@ -817,6 +1185,25 @@
                 document.getElementById('appContent').classList.add('hidden');
             }
         });
+
+        // Fechar menus ao clicar fora
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                const container = menu.parentElement;
+                if (!container.contains(e.target)) {
+                    menu.classList.add('hidden');
+                }
+            });
+        });
+
+        function toggleDropdown(id) { 
+            // Fecha os outros
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                if(menu.id !== 'menu-' + id) menu.classList.add('hidden');
+            });
+            const menu = document.getElementById('menu-' + id);
+            if (menu) menu.classList.toggle('hidden'); 
+        }
 
         function togglePasswordVisibility() {
             const pwdInput = document.getElementById('password');
@@ -829,7 +1216,7 @@
                 pwdInput.type = 'password';
                 eyeIcon.setAttribute('data-lucide', 'eye');
             }
-            lucide.createIcons(); // Recarrega o ícone alterado
+            lucide.createIcons(); 
         }
 
         function handleLogin(e) {
@@ -858,7 +1245,6 @@
             document.getElementById('appContent').classList.add('hidden');
             document.getElementById('password').value = '';
             
-            // Volta a senha para oculto por segurança ao deslogar
             const pwdInput = document.getElementById('password');
             const eyeIcon = document.getElementById('eyeIcon');
             pwdInput.type = 'password';
@@ -873,7 +1259,6 @@
         }
 
         function initApp() {
-            // Se já foi inicializado (para não duplicar em reload), sai
             if(window.appInitialized) return;
             window.appInitialized = true;
 
@@ -958,6 +1343,7 @@
                             else if (id === 'startMonthProd') applyFiltersProd();
                             else if (id === 'startMonthCal') applyFiltersCal();
                             else if (id === 'startMonthRank') applyFiltersRank();
+                            else if (id === 'startMonthAnalise') applyFiltersAnalise();
                             instance.close();
                         }
                     };
@@ -985,14 +1371,8 @@
             if (document.getElementById('startMonthProd')) document.getElementById('startMonthProd').value = "";
             if (document.getElementById('startMonthCal')) document.getElementById('startMonthCal').value = "";
             if (document.getElementById('startMonthRank')) document.getElementById('startMonthRank').value = "";
+            if (document.getElementById('startMonthAnalise')) document.getElementById('startMonthAnalise').value = "";
             
-            document.addEventListener('click', (e) => {
-                ['Prev', 'Prod', 'Cal', 'Rank'].forEach(tab => {
-                    const drop = document.getElementById('customStatusDropdown' + tab);
-                    const menu = document.getElementById('statusMenu' + tab);
-                    if (drop && menu && !drop.contains(e.target)) menu.classList.add('hidden');
-                });
-            });
             fetchData();
         }
 
@@ -1004,17 +1384,19 @@
                 buildFilterMaps(cachedApiData);
                 populateFilterDropdowns();
                 
-                ['Prev', 'Prod', 'Cal', 'Rank'].forEach(tab => {
-                    const cropDrop = document.getElementById('cropType' + tab);
-                    if (cropDrop && cropDrop.value === "") {
-                        const brocolisOpt = Array.from(cropDrop.options).find(o => o.value.toUpperCase().includes('BRÓCOLIS') || o.value.toUpperCase() === 'BROCOLIS');
-                        if (brocolisOpt) cropDrop.value = brocolisOpt.value;
+                ['Prev', 'Prod', 'Cal', 'Rank', 'Analise'].forEach(tab => {
+                    const selectedCrops = getSelected(`cropType${tab}`);
+                    if (selectedCrops.length === 0) { 
+                        const brocolisOpt = Array.from(allCrops).find(c => c.toUpperCase().includes('BRÓCOLIS') || c.toUpperCase() === 'BROCOLIS');
+                        if (brocolisOpt) {
+                            populateMultiSelect(`cropType${tab}`, Array.from(allCrops).sort(), [brocolisOpt]);
+                        }
                     }
                 });
 
-                ['Prev', 'Prod', 'Cal', 'Rank'].forEach(updateVarietyDropdownForTab);
-                ['Prev', 'Prod', 'Cal', 'Rank'].forEach(updateCycleDropdownForTab);
-                applyFiltersPrev(); applyFiltersProd(); applyFiltersCal(); applyFiltersRank();
+                ['Prev', 'Prod', 'Cal', 'Rank', 'Analise'].forEach(updateVarietyDropdownForTab);
+                ['Prev', 'Prod', 'Cal', 'Rank', 'Analise'].forEach(updateCycleDropdownForTab);
+                applyFiltersPrev(); applyFiltersProd(); applyFiltersCal(); applyFiltersRank(); applyFiltersAnalise();
             } catch (err) {
                 console.error("Erro na busca de dados:", err);
             } finally {
@@ -1023,15 +1405,16 @@
         }
 
         function switchTab(tabName) {
-            ['previsao', 'produtividade', 'calendario', 'ranking'].forEach(t => {
+            ['previsao', 'produtividade', 'calendario', 'ranking', 'analise'].forEach(t => {
                 const btn = document.getElementById('tab-' + t);
                 const view = document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1));
                 if (t === tabName) {
                     btn.classList.add('active'); btn.classList.remove('inactive');
                     if (t === 'ranking') btn.classList.add('text-brand-600');
+                    if (t === 'analise') btn.classList.add('text-indigo-600');
                     view.classList.remove('hidden'); view.classList.add('flex');
                 } else {
-                    btn.classList.remove('active', 'text-brand-600'); btn.classList.add('inactive');
+                    btn.classList.remove('active', 'text-brand-600', 'text-indigo-600'); btn.classList.add('inactive');
                     view.classList.add('hidden'); view.classList.remove('flex');
                 }
             });
@@ -1057,21 +1440,147 @@
             return Math.ceil((((temp - yearStart) / 86400000) + 1) / 7);
         }
 
+        // --- SISTEMA DE MULTI-SELECT ---
+        function getTabFromId(id) {
+            if(id.endsWith('Prev')) return 'Prev';
+            if(id.endsWith('Prod')) return 'Prod';
+            if(id.endsWith('Cal')) return 'Cal';
+            if(id.endsWith('Rank')) return 'Rank';
+            if(id.endsWith('Analise')) return 'Analise';
+            return '';
+        }
+
+        function fireActionForId(id) {
+            const tab = getTabFromId(id);
+            if(id.startsWith('blockSearch')) handleBlockChange(tab);
+            else if(id.startsWith('cycleSearch')) window[`applyFilters${tab}`]();
+            else if(id.startsWith('cropType')) handleCropChange(tab);
+            else if(id.startsWith('varietySearch')) window[`applyFilters${tab}`]();
+        }
+
+        function getSelected(id) {
+            const allCb = document.querySelector(`.checkbox-${id}-all`);
+            if (allCb && allCb.checked) return []; // [] indica "Todos"
+            
+            const itemCbs = document.querySelectorAll(`.checkbox-${id}`);
+            const checked = Array.from(itemCbs).filter(cb => cb.checked).map(cb => cb.value);
+            return checked;
+        }
+
+        function getSelectedNormalized(id) {
+            return getSelected(id).map(normalizeStr);
+        }
+
+        function updateMultiSelectText(id) {
+            const allCb = document.querySelector(`.checkbox-${id}-all`);
+            const itemCbs = document.querySelectorAll(`.checkbox-${id}`);
+            const checked = Array.from(itemCbs).filter(cb => cb.checked);
+            const textEl = document.getElementById(`text-${id}`);
+            if(!textEl) return;
+
+            if (allCb && allCb.checked) {
+                textEl.innerText = "Todos";
+            } else if (checked.length === 0) {
+                textEl.innerText = "Nenhum";
+            } else {
+                textEl.innerText = checked.map(cb => cb.value).join(', ');
+            }
+        }
+
+        function toggleAllMultiSelect(id) {
+            const allCb = document.querySelector(`.checkbox-${id}-all`);
+            const itemCbs = document.querySelectorAll(`.checkbox-${id}`);
+            itemCbs.forEach(cb => cb.checked = allCb.checked);
+            updateMultiSelectText(id);
+            fireActionForId(id);
+        }
+
+        function handleItemMultiSelect(id) {
+            const allCb = document.querySelector(`.checkbox-${id}-all`);
+            const itemCbs = document.querySelectorAll(`.checkbox-${id}`);
+            const checkedCount = Array.from(itemCbs).filter(cb => cb.checked).length;
+            
+            allCb.checked = (checkedCount === itemCbs.length);
+            updateMultiSelectText(id);
+            fireActionForId(id);
+        }
+
+        function selectOnlyMultiSelect(containerId, value) {
+            const allCb = document.querySelector(`.checkbox-${containerId}-all`);
+            if(allCb) allCb.checked = false;
+            
+            const itemCbs = document.querySelectorAll(`.checkbox-${containerId}`);
+            itemCbs.forEach(cb => {
+                cb.checked = (cb.value === value);
+            });
+            
+            updateMultiSelectText(containerId);
+            fireActionForId(containerId);
+            
+            const menu = document.getElementById(`menu-${containerId}`);
+            if(menu) menu.classList.add('hidden');
+        }
+
+        function selectOnlyStatus(tab, value) {
+            const cbs = document.querySelectorAll(`.checkbox-status${tab}`);
+            cbs.forEach(cb => {
+                cb.checked = (cb.value === value);
+            });
+            updateStatusText(tab);
+            
+            const menu = document.getElementById(`menu-status${tab}`);
+            if (menu) menu.classList.add('hidden');
+        }
+
+        function populateMultiSelect(containerId, options, selectedValues) {
+            const listEl = document.getElementById(`list-${containerId}`);
+            if(!listEl) return;
+            
+            const isAll = selectedValues.length === 0 || selectedValues.length === options.length;
+            
+            let html = `
+                <label class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer border-b border-slate-100 mb-1">
+                    <input type="checkbox" class="checkbox-${containerId}-all accent-brand-600 w-4 h-4 shrink-0" ${isAll ? 'checked' : ''} onchange="toggleAllMultiSelect('${containerId}')">
+                    <span class="text-sm font-black text-slate-700">Todos</span>
+                </label>
+            `;
+            
+            options.forEach(opt => {
+                const isChecked = isAll || selectedValues.includes(opt);
+                const safeOpt = opt.replace(/"/g, '&quot;');
+                html += `
+                    <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
+                        <label class="flex items-center gap-3 cursor-pointer flex-1 overflow-hidden p-1">
+                            <input type="checkbox" value="${safeOpt}" class="checkbox-${containerId} accent-brand-600 w-4 h-4 shrink-0" ${isChecked ? 'checked' : ''} onchange="handleItemMultiSelect('${containerId}')">
+                            <span class="text-sm font-semibold text-slate-600 truncate">${opt}</span>
+                        </label>
+                        <button type="button" onclick="selectOnlyMultiSelect('${containerId}', '${safeOpt}')" class="text-[10px] font-bold text-brand-600 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 hover:bg-brand-50 rounded shrink-0">Somente</button>
+                    </div>
+                `;
+            });
+            
+            listEl.innerHTML = html;
+            updateMultiSelectText(containerId);
+        }
+
         function buildFilterMaps(data) {
             cropVarietyMap = {}; allCrops.clear(); allVarieties.clear();
             blockCycleMap = {}; allBlocks.clear(); allCycles.clear();
             const process = (crop, variety, bloco, ciclo) => {
                 const c = (crop || "").trim(); const v = (variety || "").trim();
                 const b = (bloco || "").toString().trim(); const cy = (ciclo || "").toString().trim();
+                
                 if (c) {
                     allCrops.add(c);
-                    if (!cropVarietyMap[c]) cropVarietyMap[c] = new Set();
-                    if (v) { cropVarietyMap[c].add(v); allVarieties.add(v); }
+                    const cNorm = normalizeStr(c);
+                    if (!cropVarietyMap[cNorm]) cropVarietyMap[cNorm] = new Set();
+                    if (v) { cropVarietyMap[cNorm].add(v); allVarieties.add(v); }
                 }
                 if (b) {
                     allBlocks.add(b);
-                    if (!blockCycleMap[b]) blockCycleMap[b] = new Set();
-                    if (cy) { blockCycleMap[b].add(cy); allCycles.add(cy); }
+                    const bNorm = normalizeStr(b);
+                    if (!blockCycleMap[bNorm]) blockCycleMap[bNorm] = new Set();
+                    if (cy) { blockCycleMap[bNorm].add(cy); allCycles.add(cy); }
                 }
             };
             if (data.historico) data.historico.forEach(i => process(i.cultura, i.variedade_comercial, i.bloco, i.ciclo));
@@ -1080,134 +1589,98 @@
 
         function populateFilterDropdowns() {
             const sortedCrops = Array.from(allCrops).sort();
-            ['Prev', 'Prod', 'Cal', 'Rank'].forEach(tab => {
-                const drop = document.getElementById('cropType' + tab);
-                if (drop) {
-                    const current = drop.value;
-                    drop.innerHTML = '<option value="">Todas</option>';
-                    sortedCrops.forEach(c => {
-                        const opt = document.createElement('option');
-                        opt.value = c; opt.textContent = c; drop.appendChild(opt);
-                    });
-                    if (current && Array.from(drop.options).some(o => o.value === current)) drop.value = current;
-                }
-            });
             const sortedBlocks = Array.from(allBlocks).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-            ['Prev', 'Prod', 'Cal', 'Rank'].forEach(tab => {
-                const drop = document.getElementById('blockSearch' + tab);
-                if (drop) {
-                    const current = drop.value;
-                    drop.innerHTML = '<option value="">Todos</option>';
-                    sortedBlocks.forEach(b => {
-                        const opt = document.createElement('option');
-                        opt.value = b; opt.textContent = b; drop.appendChild(opt);
-                    });
-                    if (current && Array.from(drop.options).some(o => o.value === current)) drop.value = current;
-                }
+            
+            ['Prev', 'Prod', 'Cal', 'Rank', 'Analise'].forEach(tab => {
+                populateMultiSelect(`cropType${tab}`, sortedCrops, []);
+                populateMultiSelect(`blockSearch${tab}`, sortedBlocks, []);
             });
         }
 
         function updateCycleDropdownForTab(tab) {
-            const blockEl = document.getElementById('blockSearch' + tab);
-            if (!blockEl) return;
-            const blockVal = blockEl.value;
-            const cycleDrop = document.getElementById('cycleSearch' + tab);
-            if (!cycleDrop) return;
-            const current = cycleDrop.value;
-            let list = blockVal ? Array.from(blockCycleMap[blockVal] || []) : Array.from(allCycles);
-            list.sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-            cycleDrop.innerHTML = '<option value="">Todos</option>';
-            list.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c; opt.textContent = c; cycleDrop.appendChild(opt);
-            });
-            if (current && list.includes(current)) cycleDrop.value = current;
+            const blocksNorm = getSelectedNormalized(`blockSearch${tab}`);
+            let list = new Set();
+            if (blocksNorm.length > 0) {
+                blocksNorm.forEach(bNorm => {
+                    if (blockCycleMap[bNorm]) blockCycleMap[bNorm].forEach(cy => list.add(cy));
+                });
+            } else {
+                allCycles.forEach(cy => list.add(cy));
+            }
+            const sortedList = Array.from(list).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+            
+            const currentSelected = getSelected(`cycleSearch${tab}`);
+            populateMultiSelect(`cycleSearch${tab}`, sortedList, currentSelected);
+        }
+
+        function updateVarietyDropdownForTab(tab) {
+            const cropsNorm = getSelectedNormalized(`cropType${tab}`);
+            let list = new Set();
+            if (cropsNorm.length > 0) {
+                cropsNorm.forEach(cNorm => {
+                    if (cropVarietyMap[cNorm]) cropVarietyMap[cNorm].forEach(v => list.add(v));
+                });
+            } else {
+                allVarieties.forEach(v => list.add(v));
+            }
+            const sortedList = Array.from(list).sort();
+            const currentSelected = getSelected(`varietySearch${tab}`);
+            populateMultiSelect(`varietySearch${tab}`, sortedList, currentSelected);
         }
 
         function handleBlockChange(tab) {
             updateCycleDropdownForTab(tab);
-            if (tab === 'Prev') applyFiltersPrev();
-            else if (tab === 'Prod') applyFiltersProd();
-            else if (tab === 'Cal') applyFiltersCal();
-            else if (tab === 'Rank') applyFiltersRank();
-        }
-
-        function updateVarietyDropdownForTab(tab) {
-            const cropEl = document.getElementById('cropType' + tab);
-            if (!cropEl) return;
-            const cropVal = cropEl.value;
-            const varDrop = document.getElementById('varietySearch' + tab);
-            if (!varDrop) return;
-            const current = varDrop.value;
-            let list = cropVal ? Array.from(cropVarietyMap[cropVal] || []) : Array.from(allVarieties);
-            list.sort();
-            varDrop.innerHTML = '<option value="">Todas</option>';
-            list.forEach(v => {
-                const opt = document.createElement('option');
-                opt.value = v; opt.textContent = v; varDrop.appendChild(opt);
-            });
-            if (current && list.includes(current)) varDrop.value = current;
+            window[`applyFilters${tab}`]();
         }
 
         function handleCropChange(tab) {
             updateVarietyDropdownForTab(tab);
-            if (tab === 'Prev') applyFiltersPrev();
-            else if (tab === 'Prod') applyFiltersProd();
-            else if (tab === 'Cal') applyFiltersCal();
-            else if (tab === 'Rank') applyFiltersRank();
+            window[`applyFilters${tab}`]();
         }
 
         function clearFilters(tab) {
             const monthInput = document.getElementById('startMonth' + tab);
             if (monthInput && monthInput._flatpickr) monthInput._flatpickr.clear();
             else if (monthInput) monthInput.value = "";
-            const blockSelect = document.getElementById('blockSearch' + tab);
-            if (blockSelect) blockSelect.value = "";
-            const cycleSelect = document.getElementById('cycleSearch' + tab);
-            if (cycleSelect) cycleSelect.value = "";
-            const cropSelect = document.getElementById('cropType' + tab);
-            if (cropSelect) {
-                const brocolisOpt = Array.from(cropSelect.options).find(o => o.value.toUpperCase().includes('BRÓCOLIS') || o.value.toUpperCase() === 'BROCOLIS');
-                cropSelect.value = brocolisOpt ? brocolisOpt.value : "";
-            }
-            const varietySelect = document.getElementById('varietySearch' + tab);
-            if (varietySelect) varietySelect.value = "";
+            
             if (tab === 'Prev') {
                 const rate = document.getElementById('deliveryRatePrev');
                 if (rate) rate.value = "50";
             }
             
-            const checkboxes = document.querySelectorAll('.status-checkbox-' + tab);
-            if (tab === 'Rank') {
-                // Ranking by default only shows Concluídos for fair comparison
-                checkboxes.forEach(cb => cb.checked = (cb.value === 'Concluído'));
-            } else {
-                checkboxes.forEach(cb => cb.checked = true);
-            }
+            const sortedCrops = Array.from(allCrops).sort();
+            const sortedBlocks = Array.from(allBlocks).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
             
-            const statusText = document.getElementById('statusSelectedText' + tab);
-            if (statusText) statusText.innerText = (tab === 'Rank') ? "Concluído" : "Todos";
+            populateMultiSelect(`cropType${tab}`, sortedCrops, []);
+            populateMultiSelect(`blockSearch${tab}`, sortedBlocks, []);
+            
+            const statusCbs = document.querySelectorAll(`.checkbox-status${tab}`);
+            if (tab === 'Rank' || tab === 'Analise') {
+                statusCbs.forEach(cb => cb.checked = (normalizeStr(cb.value) === normalizeStr('Concluído')));
+                document.getElementById(`text-status${tab}`).innerText = 'Concluído';
+            } else {
+                statusCbs.forEach(cb => cb.checked = true);
+                document.getElementById(`text-status${tab}`).innerText = 'Todos';
+            }
             
             updateCycleDropdownForTab(tab);
             updateVarietyDropdownForTab(tab);
             
-            if (tab === 'Prev') applyFiltersPrev();
-            else if (tab === 'Prod') applyFiltersProd();
-            else if (tab === 'Cal') applyFiltersCal();
-            else if (tab === 'Rank') applyFiltersRank();
+            window[`applyFilters${tab}`]();
         }
 
         function applyFiltersPrev() {
             if (!cachedApiData) return;
             const targetMonth = document.getElementById('startMonthPrev')?.value || "";
-            const block = document.getElementById('blockSearchPrev')?.value || "";
-            const cycle = document.getElementById('cycleSearchPrev')?.value || "";
-            const crop = document.getElementById('cropTypePrev')?.value || "";
-            const variety = document.getElementById('varietySearchPrev')?.value || "";
+            const blocks = getSelectedNormalized('blockSearchPrev');
+            const cycles = getSelectedNormalized('cycleSearchPrev');
+            const crops = getSelectedNormalized('cropTypePrev');
+            const varieties = getSelectedNormalized('varietySearchPrev');
             const rateEl = document.getElementById('deliveryRatePrev');
             const rate = rateEl ? (parseFloat(rateEl.value) || 50) : 50;
-            const statuses = Array.from(document.querySelectorAll('.status-checkbox-Prev')).filter(cb => cb.checked).map(cb => cb.value.toLowerCase());
-            const res = processPrevisao(cachedApiData.historico, cachedApiData.pendentes, targetMonth, block, cycle, crop, variety, statuses, rate);
+            const statuses = Array.from(document.querySelectorAll('.checkbox-statusPrev')).filter(cb => cb.checked).map(cb => normalizeStr(cb.value));
+            
+            const res = processPrevisao(cachedApiData.historico, cachedApiData.pendentes, targetMonth, blocks, cycles, crops, varieties, statuses, rate);
             lastProcessedData.prev = res;
             updatePrevisaoView(res);
         }
@@ -1215,12 +1688,13 @@
         function applyFiltersProd() {
             if (!cachedApiData) return;
             const targetMonth = document.getElementById('startMonthProd')?.value || "";
-            const block = document.getElementById('blockSearchProd')?.value || "";
-            const cycle = document.getElementById('cycleSearchProd')?.value || "";
-            const crop = document.getElementById('cropTypeProd')?.value || "";
-            const variety = document.getElementById('varietySearchProd')?.value || "";
-            const statuses = Array.from(document.querySelectorAll('.status-checkbox-Prod')).filter(cb => cb.checked).map(cb => cb.value.toLowerCase());
-            const res = processProdutividade(cachedApiData.historico, cachedApiData.pendentes, targetMonth, block, cycle, crop, variety, statuses);
+            const blocks = getSelectedNormalized('blockSearchProd');
+            const cycles = getSelectedNormalized('cycleSearchProd');
+            const crops = getSelectedNormalized('cropTypeProd');
+            const varieties = getSelectedNormalized('varietySearchProd');
+            const statuses = Array.from(document.querySelectorAll('.checkbox-statusProd')).filter(cb => cb.checked).map(cb => normalizeStr(cb.value));
+            
+            const res = processProdutividade(cachedApiData.historico, cachedApiData.pendentes, targetMonth, blocks, cycles, crops, varieties, statuses);
             lastProcessedData.prod = res;
             updateProdutividadeView(res);
         }
@@ -1228,12 +1702,13 @@
         function applyFiltersCal() {
             if (!cachedApiData) return;
             const targetMonth = document.getElementById('startMonthCal')?.value || "";
-            const block = document.getElementById('blockSearchCal')?.value || "";
-            const cycle = document.getElementById('cycleSearchCal')?.value || "";
-            const crop = document.getElementById('cropTypeCal')?.value || "";
-            const variety = document.getElementById('varietySearchCal')?.value || "";
-            const statuses = Array.from(document.querySelectorAll('.status-checkbox-Cal')).filter(cb => cb.checked).map(cb => cb.value.toLowerCase());
-            const res = processCalendario(cachedApiData.pendentes, cachedApiData.historico, targetMonth, block, cycle, crop, variety, statuses);
+            const blocks = getSelectedNormalized('blockSearchCal');
+            const cycles = getSelectedNormalized('cycleSearchCal');
+            const crops = getSelectedNormalized('cropTypeCal');
+            const varieties = getSelectedNormalized('varietySearchCal');
+            const statuses = Array.from(document.querySelectorAll('.checkbox-statusCal')).filter(cb => cb.checked).map(cb => normalizeStr(cb.value));
+            
+            const res = processCalendario(cachedApiData.pendentes, cachedApiData.historico, targetMonth, blocks, cycles, crops, varieties, statuses);
             lastProcessedData.cal = res;
             updateCalendarioView(res);
         }
@@ -1241,14 +1716,29 @@
         function applyFiltersRank() {
             if (!cachedApiData) return;
             const targetMonth = document.getElementById('startMonthRank')?.value || "";
-            const block = document.getElementById('blockSearchRank')?.value || "";
-            const cycle = document.getElementById('cycleSearchRank')?.value || "";
-            const crop = document.getElementById('cropTypeRank')?.value || "";
-            const variety = document.getElementById('varietySearchRank')?.value || "";
-            const statuses = Array.from(document.querySelectorAll('.status-checkbox-Rank')).filter(cb => cb.checked).map(cb => cb.value.toLowerCase());
-            const res = processRanking(cachedApiData.historico, cachedApiData.pendentes, targetMonth, block, cycle, crop, variety, statuses);
+            const blocks = getSelectedNormalized('blockSearchRank');
+            const cycles = getSelectedNormalized('cycleSearchRank');
+            const crops = getSelectedNormalized('cropTypeRank');
+            const varieties = getSelectedNormalized('varietySearchRank');
+            const statuses = Array.from(document.querySelectorAll('.checkbox-statusRank')).filter(cb => cb.checked).map(cb => normalizeStr(cb.value));
+            
+            const res = processRanking(cachedApiData.historico, cachedApiData.pendentes, targetMonth, blocks, cycles, crops, varieties, statuses);
             lastProcessedData.rank = res;
             updateRankingView(res);
+        }
+
+        function applyFiltersAnalise() {
+            if (!cachedApiData) return;
+            const targetMonth = document.getElementById('startMonthAnalise')?.value || "";
+            const blocks = getSelectedNormalized('blockSearchAnalise');
+            const cycles = getSelectedNormalized('cycleSearchAnalise');
+            const crops = getSelectedNormalized('cropTypeAnalise');
+            const varieties = getSelectedNormalized('varietySearchAnalise');
+            const statuses = Array.from(document.querySelectorAll('.checkbox-statusAnalise')).filter(cb => cb.checked).map(cb => normalizeStr(cb.value));
+            
+            const res = processAnalise(cachedApiData.historico, cachedApiData.pendentes, targetMonth, blocks, cycles, crops, varieties, statuses);
+            lastProcessedData.analise = res;
+            updateAnaliseView(res);
         }
 
         function processPrevisao(hist, pend, m, bF, cyF, crF, vF, stats, rate) {
@@ -1268,13 +1758,15 @@
             const delivered = {}; const lastDeliv = {}; let pCab=0, pKg=0; const pDays = new Set();
             hist.forEach(r => {
                 const d = parseGoogleDate(r.data_entrega); if(!d) return;
-                const matchBlock = !bF || normalizeStr(r.bloco) === normalizeStr(bF);
-                const matchCycle = !cyF || normalizeStr(r.ciclo) === normalizeStr(cyF);
-                const matchCrop = !crF || normalizeStr(r.cultura) === normalizeStr(crF);
-                const matchVar = !vF || normalizeStr(r.variedade_comercial) === normalizeStr(vF);
+                const matchBlock = bF.length === 0 || bF.includes(normalizeStr(r.bloco));
+                const matchCycle = cyF.length === 0 || cyF.includes(normalizeStr(r.ciclo));
+                const matchCrop = crF.length === 0 || crF.includes(normalizeStr(r.cultura));
+                const matchVar = vF.length === 0 || vF.includes(normalizeStr(r.variedade_comercial));
+                
                 const k = `${normalizeStr(r.bloco)}|${normalizeStr(r.ciclo)}|${normalizeStr(r.cultura)}`;
                 if(!delivered[k]) delivered[k] = {u:0,kg:0}; delivered[k].u += r.qtd_cabecas; delivered[k].kg += r.peso_total_kg;
                 if(!lastDeliv[k] || d > lastDeliv[k]) lastDeliv[k] = d;
+                
                 if(matchBlock && matchCycle && matchCrop && matchVar) {
                     if (targetStart === null || (d.getMonth() === prevM && d.getFullYear() === prevY)) {
                         pCab += r.qtd_cabecas; pKg += r.peso_total_kg; pDays.add(d.toISOString().split('T')[0]);
@@ -1292,15 +1784,17 @@
                 saldoDist[k] -= abater; bl.jaEntregueAttr = abater; bl.pRest = bl.qtd_plantas - abater;
             });
             blks.forEach(bl => {
-                if(bF && normalizeStr(bl.nome) !== normalizeStr(bF)) return;
-                if(cyF && normalizeStr(bl.ciclo) !== normalizeStr(cyF)) return;
-                if(crF && normalizeStr(bl.cultura) !== normalizeStr(crF)) return;
-                if(vF && normalizeStr(bl.variedade) !== normalizeStr(vF)) return;
-                const st = (bl.status || "pendente").toLowerCase(); if(!stats.some(s => st.includes(s))) return;
+                if(bF.length > 0 && !bF.includes(normalizeStr(bl.nome))) return;
+                if(cyF.length > 0 && !cyF.includes(normalizeStr(bl.ciclo))) return;
+                if(crF.length > 0 && !crF.includes(normalizeStr(bl.cultura))) return;
+                if(vF.length > 0 && !vF.includes(normalizeStr(bl.variedade))) return;
+                
+                const st = normalizeStr(bl.status || "pendente"); if(!stats.some(s => st.includes(s))) return;
                 const matchesDate = targetStart === null || (bl.dObj >= targetStart && bl.dObj <= targetEnd);
                 const firstDayM = targetStart !== null ? targetStart : new Date();
                 const isAndamentoAntigo = st.includes("andamento") && bl.dObj < firstDayM;
                 if (!matchesDate && !isAndamentoAntigo) return;
+                
                 const k = `${normalizeStr(bl.nome)}|${normalizeStr(bl.ciclo)}|${normalizeStr(bl.cultura)}`;
                 if(!processedKeys.has(k)){ dUn += delivered[k]?.u || 0; dKg += delivered[k]?.kg || 0; processedKeys.add(k); }
                 if(bl.pRest > 0){
@@ -1327,12 +1821,11 @@
             });
             const cData = Object.keys(groupedDay).sort().map(k => { const [y,m,d] = k.split('-'); return { label: `${d} ${nomesDosMeses[parseInt(m)-1]} ${y}`, peso: groupedDay[k].p, unidades: groupedDay[k].u }; });
             const wData = Object.keys(groupedWeek).sort((a,b) => groupedWeek[a].sk - groupedWeek[b].sk).map(k => ({ label: k, peso: groupedWeek[k].p, unidades: groupedWeek[k].u }));
+            
             let labelProjecao = "Todo Período";
-            if (bF && cyF) labelProjecao = `${bF} (Ciclo ${cyF})`;
-            else if (bF) labelProjecao = `Bloco: ${bF}`;
-            else if (cyF) labelProjecao = `Ciclo: ${cyF}`;
-            else if (vF) labelProjecao = `Var: ${vF}`;
-            else if (targetStart !== null) labelProjecao = `${targetStart.toLocaleDateString('pt-BR')} a ${targetEnd.toLocaleDateString('pt-BR')}`;
+            if (targetStart !== null) labelProjecao = `${targetStart.toLocaleDateString('pt-BR')} a ${targetEnd.toLocaleDateString('pt-BR')}`;
+            else if (bF.length > 0) labelProjecao = `Filtro Aplicado`;
+
             let nomeMesBase = m ? new Date(prevY, prevM, 15).toLocaleString('pt-BR', { month: 'long', year: 'numeric' }) : "Geral";
             return { pesoAvg: Math.round(pMedKg*1000), ritmo, totalKg, totalUn, totalCampo: totalField, dUn, dKg, dAvg: dUn > 0 ? Math.round((dKg/dUn)*1000):0, chartData: cData, weeklyData: wData, tabela: proj, nomeMesBase: nomeMesBase, labelAlvo: labelProjecao };
         }
@@ -1351,13 +1844,16 @@
             const lotesTrabalhados = new Set();
             hist.forEach(r => {
                 const d = parseGoogleDate(r.data_entrega); if(!d) return;
-                if(bF && normalizeStr(r.bloco) !== normalizeStr(bF)) return;
-                if(cyF && normalizeStr(r.ciclo) !== normalizeStr(cyF)) return;
-                if(crF && normalizeStr(r.cultura) !== normalizeStr(crF)) return;
-                if(vF && normalizeStr(r.variedade_comercial) !== normalizeStr(vF)) return;
+                
+                if(bF.length > 0 && !bF.includes(normalizeStr(r.bloco))) return;
+                if(cyF.length > 0 && !cyF.includes(normalizeStr(r.ciclo))) return;
+                if(crF.length > 0 && !crF.includes(normalizeStr(r.cultura))) return;
+                if(vF.length > 0 && !vF.includes(normalizeStr(r.variedade_comercial))) return;
+                
                 const bInfo = pend.find(p => normalizeStr(p.nome) === normalizeStr(r.bloco) && normalizeStr(p.ciclo) === normalizeStr(r.ciclo));
-                const st = (bInfo?.status || "pendente").toLowerCase(); if(!stats.some(s => st.includes(s))) return;
+                const st = normalizeStr(bInfo?.status || "pendente"); if(!stats.some(s => st.includes(s))) return;
                 const isMatchDate = targetStart === null || (d >= targetStart && d <= targetEnd);
+                
                 if(isMatchDate){
                     prod.totalU += r.qtd_cabecas; prod.totalKg += r.peso_total_kg; prod.totalCx += (r.caixas || 0);
                     if(!prod.minD || d < prod.minD) prod.minD = d;
@@ -1401,12 +1897,15 @@
             pend.forEach(bl => {
                 const dEst = parseGoogleDate(bl.data_colheita); if(!dEst) return;
                 const dPlan = parseGoogleDate(bl.data_plantio);
-                if(bF && normalizeStr(bl.nome) !== normalizeStr(bF)) return;
-                if(cyF && normalizeStr(bl.ciclo) !== normalizeStr(cyF)) return;
-                if(crF && normalizeStr(bl.cultura) !== normalizeStr(crF)) return;
-                if(vF && normalizeStr(bl.variedade) !== normalizeStr(vF)) return;
-                const st = (bl.status || "pendente").toLowerCase(); if(!stats.some(s => st.includes(s))) return;
+                
+                if(bF.length > 0 && !bF.includes(normalizeStr(bl.nome))) return;
+                if(cyF.length > 0 && !cyF.includes(normalizeStr(bl.ciclo))) return;
+                if(crF.length > 0 && !crF.includes(normalizeStr(bl.cultura))) return;
+                if(vF.length > 0 && !vF.includes(normalizeStr(bl.variedade))) return;
+                
+                const st = normalizeStr(bl.status || "pendente"); if(!stats.some(s => st.includes(s))) return;
                 if(targetStart !== null && (dEst < targetStart || dEst > targetEnd)) return;
+                
                 const key = `${normalizeStr(bl.nome)}|${normalizeStr(bl.ciclo)}|${normalizeStr(bl.cultura)}`;
                 if(!agrup[key]){
                     agrup[key] = { bloco: bl.nome, ciclo: bl.ciclo, cultura: bl.cultura, variedades: new Set(), status: bl.status, dataPlantio: dPlan, dataEst: dEst, dataReal: iniciosReais[key] || null, total: 0 };
@@ -1439,17 +1938,18 @@
                 targetEnd = new Date(endStr + "T23:59:59");
             }
             
-            const lotesMap = {}; // key: bloco|ciclo|cultura
+            const lotesMap = {}; 
 
             hist.forEach(r => {
                 const d = parseGoogleDate(r.data_entrega); if(!d) return;
-                if(bF && normalizeStr(r.bloco) !== normalizeStr(bF)) return;
-                if(cyF && normalizeStr(r.ciclo) !== normalizeStr(cyF)) return;
-                if(crF && normalizeStr(r.cultura) !== normalizeStr(crF)) return;
-                if(vF && normalizeStr(r.variedade_comercial) !== normalizeStr(vF)) return;
+                
+                if(bF.length > 0 && !bF.includes(normalizeStr(r.bloco))) return;
+                if(cyF.length > 0 && !cyF.includes(normalizeStr(r.ciclo))) return;
+                if(crF.length > 0 && !crF.includes(normalizeStr(r.cultura))) return;
+                if(vF.length > 0 && !vF.includes(normalizeStr(r.variedade_comercial))) return;
                 
                 const bInfo = pend.find(p => normalizeStr(p.nome) === normalizeStr(r.bloco) && normalizeStr(p.ciclo) === normalizeStr(r.ciclo));
-                const st = (bInfo?.status || "pendente").toLowerCase(); if(!stats.some(s => st.includes(s))) return;
+                const st = normalizeStr(bInfo?.status || "pendente"); if(!stats.some(s => st.includes(s))) return;
                 
                 const isMatchDate = targetStart === null || (d >= targetStart && d <= targetEnd);
                 if(isMatchDate){
@@ -1473,12 +1973,142 @@
             
             list.forEach(item => {
                 const calcP = Math.max(item.estimativa, item.un);
-                item.aprov = Math.min(100, Math.round((item.un / calcP) * 100)); // Cap to 100% logic
+                item.aprov = Math.min(100, Math.round((item.un / calcP) * 100)); 
                 item.pMed = Math.round((item.kg / item.un) * 1000);
             });
 
             return list;
         }
+
+        function processAnalise(hist, pend, m, bF, cyF, crF, vF, stats) {
+            let targetStart = null, targetEnd = null;
+            if (m) {
+                let startStr = m, endStr = m;
+                if (m.includes(' até ')) { [startStr, endStr] = m.split(' até '); }
+                else if (m.includes(' to ')) { [startStr, endStr] = m.split(' to '); }
+                else if (m.includes(' a ')) { [startStr, endStr] = m.split(' a '); }
+                targetStart = new Date(startStr + "T00:00:00");
+                targetEnd = new Date(endStr + "T23:59:59");
+            }
+
+            const lotes = {};
+
+            pend.forEach(b => {
+                if(bF.length > 0 && !bF.includes(normalizeStr(b.nome))) return;
+                if(cyF.length > 0 && !cyF.includes(normalizeStr(b.ciclo))) return;
+                if(crF.length > 0 && !crF.includes(normalizeStr(b.cultura))) return;
+                if(vF.length > 0 && !vF.includes(normalizeStr(b.variedade))) return;
+                
+                const st = normalizeStr(b.status || "pendente"); if(!stats.some(s => st.includes(s))) return;
+                const dEst = parseGoogleDate(b.data_colheita);
+                if(targetStart !== null && (!dEst || dEst < targetStart || dEst > targetEnd)) return;
+
+                const key = `${normalizeStr(b.nome)}|${normalizeStr(b.ciclo)}|${normalizeStr(b.cultura)}`;
+                lotes[key] = {
+                    bloco: b.nome, ciclo: parseInt(b.ciclo) || 0, cultura: b.cultura, variedade: b.variedade,
+                    plantas: b.qtd_plantas, data_est: dEst, colhidas: 0, kg: 0, min_d: null, max_d: null,
+                    dias_colheita: new Set()
+                };
+            });
+
+            hist.forEach(r => {
+                const key = `${normalizeStr(r.bloco)}|${normalizeStr(r.ciclo)}|${normalizeStr(r.cultura)}`;
+                if (!lotes[key]) return; // Only process what passed the pend filter
+                const d = parseGoogleDate(r.data_entrega); if(!d) return;
+
+                // CORREÇÃO: Forçar que os cortes também obedeçam rigorosamente ao período filtrado
+                if(targetStart !== null && (d < targetStart || d > targetEnd)) return;
+
+                lotes[key].colhidas += r.qtd_cabecas;
+                lotes[key].kg += r.peso_total_kg;
+                if (!lotes[key].min_d || d < lotes[key].min_d) lotes[key].min_d = d;
+                if (!lotes[key].max_d || d > lotes[key].max_d) lotes[key].max_d = d;
+                lotes[key].dias_colheita.add(d.toISOString().split('T')[0]);
+            });
+
+            // Metrics
+            let totalPl = 0, totalCol = 0, totalKg = 0;
+            let sumAtraso = 0, countAtraso = 0;
+            let sumJanela = 0, countJanela = 0;
+            
+            const sazonalidade = Array(12).fill().map(() => ({un: 0, kg: 0}));
+            const perdas = {};
+            const evolucaoMap = {}; // bloco -> array de ciclos
+            const janelaRanking = [];
+
+            Object.values(lotes).forEach(lot => {
+                if(lot.plantas > 0) totalPl += lot.plantas;
+                if(lot.colhidas > 0) {
+                    totalCol += lot.colhidas;
+                    totalKg += lot.kg;
+                    
+                    if(lot.data_est && lot.min_d) {
+                        const diff = Math.round((lot.min_d - lot.data_est) / (1000 * 60 * 60 * 24));
+                        sumAtraso += diff;
+                        countAtraso++;
+                    }
+
+                    if(lot.dias_colheita.size > 0) {
+                        const janela = lot.dias_colheita.size;
+                        sumJanela += janela;
+                        countJanela++;
+                        janelaRanking.push({name: `${lot.bloco} (C${lot.ciclo})`, days: janela});
+                    }
+
+                    if(lot.min_d) {
+                        const m = lot.min_d.getMonth();
+                        sazonalidade[m].un += lot.colhidas;
+                        sazonalidade[m].kg += lot.kg;
+                    }
+
+                    const pMed = Math.round((lot.kg / lot.colhidas) * 1000);
+                    if(!evolucaoMap[lot.bloco]) evolucaoMap[lot.bloco] = [];
+                    evolucaoMap[lot.bloco].push({ciclo: lot.ciclo, pMed: pMed});
+
+                    const calcP = Math.max(lot.plantas, lot.colhidas);
+                    const perdaVal = calcP - lot.colhidas;
+                    if(perdaVal > 0) {
+                        const vName = lot.variedade || "Não Informado";
+                        if(!perdas[vName]) perdas[vName] = 0;
+                        perdas[vName] += perdaVal;
+                    }
+                }
+            });
+
+            const avgAtraso = countAtraso > 0 ? Math.round(sumAtraso / countAtraso) : 0;
+            const avgJanela = countJanela > 0 ? Math.round(sumJanela / countJanela) : 0;
+            const globalAprov = totalPl > 0 ? Math.min(100, Math.round((totalCol / totalPl) * 100)) : 0;
+            const prod1000 = totalPl > 0 ? Math.round((totalKg / (totalPl / 1000))) : 0;
+
+            const sazChartData = sazonalidade.map(s => s.un > 0 ? Math.round((s.kg/s.un)*1000) : null);
+            
+            const topBlocosEvolucao = Object.keys(evolucaoMap)
+                .filter(b => evolucaoMap[b].length > 1) 
+                .sort((a,b) => evolucaoMap[b].length - evolucaoMap[a].length)
+                .slice(0, 5);
+            
+            let maxCiclo = 0;
+            topBlocosEvolucao.forEach(b => {
+                const max = Math.max(...evolucaoMap[b].map(x=>x.ciclo));
+                if(max > maxCiclo) maxCiclo = max;
+                evolucaoMap[b].sort((x,y) => x.ciclo - y.ciclo);
+            });
+
+            const perdasLabels = Object.keys(perdas).sort((a,b) => perdas[b] - perdas[a]).slice(0, 8);
+            const perdasData = perdasLabels.map(l => perdas[l]);
+
+            const topJanelas = janelaRanking.sort((a,b) => b.days - a.days).slice(0, 5);
+
+            return {
+                globalAprov, avgAtraso, avgJanela, prod1000,
+                sazChartData,
+                evolucaoLabels: Array.from({length: maxCiclo}, (_, i) => `Ciclo ${i+1}`),
+                evolucaoMap, topBlocosEvolucao,
+                perdasLabels, perdasData,
+                topJanelas
+            };
+        }
+
 
         function updatePrevisaoView(res) {
             safeSetText('historicalAvgLabel', res.nomeMesBase === "Geral" ? `Média (gr) (Geral)` : `Média (gr) do anterior (${res.nomeMesBase})`);
@@ -1567,13 +2197,11 @@
         }
 
         function updateRankingView(list) {
-            // Sort arrays
             const topAprov = [...list].sort((a,b) => b.aprov - a.aprov || b.pMed - a.pMed);
             const worstAprov = [...list].sort((a,b) => a.aprov - b.aprov || a.pMed - b.pMed);
             const topPeso = [...list].sort((a,b) => b.pMed - a.pMed || b.aprov - a.aprov);
             const topKg = [...list].sort((a,b) => b.kg - a.kg);
 
-            // Update Highlight Cards
             if (topAprov.length > 0) {
                 safeSetText('rankBestAprovName', topAprov[0].bloco);
                 safeSetText('rankBestAprovInfo', `Ciclo ${topAprov[0].ciclo} • ${topAprov[0].cultura}`);
@@ -1598,7 +2226,6 @@
                 safeSetText('rankBestVolName', '--'); safeSetText('rankBestVolInfo', '--'); safeSetText('rankBestVolVal', '0');
             }
 
-            // Fill Tables (Top 10 max)
             const renderTable = (dataArr, tbodyId, valKey, suffix) => {
                 const tbody = document.getElementById(tbodyId);
                 if(!tbody) return;
@@ -1624,12 +2251,78 @@
             renderTable(topPeso, 'rankTopPesoBody', 'pMed', 'g');
             lucide.createIcons();
 
-            // Charts (Top 5 Horizontal)
             const top5A = topAprov.slice(0, 5);
             const top5P = topPeso.slice(0, 5);
 
             createHorizontalBarChart('rankAprovChart', top5A.map(i => `${i.bloco} (C${i.ciclo})`), top5A.map(i => i.aprov), '#10b981', 'Aproveitamento (%)', '%');
             createHorizontalBarChart('rankPesoChart', top5P.map(i => `${i.bloco} (C${i.ciclo})`), top5P.map(i => i.pMed), '#0ea5e9', 'Peso Médio (g)', 'g');
+        }
+
+        function updateAnaliseView(res) {
+            safeSetText('anaAcuraciaVol', res.globalAprov + '%');
+            safeSetText('anaAcuraciaData', res.avgAtraso > 0 ? '+' + res.avgAtraso : res.avgAtraso);
+            safeSetText('anaJanelaMédia', res.avgJanela);
+            safeSetText('anaProdRelativa', res.prod1000.toLocaleString('pt-BR'));
+
+            // Sazonalidade
+            createSimpleBarChart('analiseSazonalChart', nomesDosMeses, res.sazChartData, '#0284c7', 'Peso Médio (g)', false, 'g');
+
+            // Evolução por Bloco (Linhas)
+            createLineChart('analiseEvolucaoChart', res.evolucaoLabels, res.evolucaoMap, res.topBlocosEvolucao);
+
+            // Janela Ranking
+            createHorizontalBarChart('analiseJanelaChart', res.topJanelas.map(i => i.name), res.topJanelas.map(i => i.days), '#f59e0b', 'Dias de Colheita', ' dias');
+
+            // Perdas Pie
+            const pieColors = ['#f43f5e', '#f97316', '#8b5cf6', '#10b981', '#14b8a6', '#d946ef', '#eab308', '#64748b'];
+            createPieChart('analisePerdasChart', res.perdasLabels, res.perdasData, pieColors, false);
+        }
+
+        function createLineChart(id, labels, mapData, topKeys) {
+            const ctx = document.getElementById(id);
+            if (!ctx) return;
+            const ctx2d = ctx.getContext('2d'); if (charts[id]) charts[id].destroy();
+            
+            if (topKeys.length === 0) {
+                charts[id] = new Chart(ctx2d, { type: 'line', data: { labels: ["Sem Dados"], datasets: [{ data: [0] }] }, options: { plugins: { legend: { display: false } } } });
+                return;
+            }
+
+            const colors = ['#0ea5e9', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6'];
+            const datasets = topKeys.map((k, i) => {
+                const mapObj = {};
+                mapData[k].forEach(x => mapObj[`Ciclo ${x.ciclo}`] = x.pMed);
+                const dataArr = labels.map(l => mapObj[l] || null);
+                
+                return {
+                    label: k,
+                    data: dataArr,
+                    borderColor: colors[i % colors.length],
+                    backgroundColor: colors[i % colors.length],
+                    tension: 0.3,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    spanGaps: true
+                };
+            });
+
+            charts[id] = new Chart(ctx2d, {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { weight: 'bold' } } },
+                        tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.95)', padding: 12, cornerRadius: 8 },
+                        datalabels: { display: true, anchor: 'end', align: 'top', color: '#64748b', font: { weight: '800', size: 9 }, formatter: function(value) { return value ? value + 'g' : ''; } }
+                    },
+                    scales: {
+                        y: { grid: { color: '#f1f5f9' }, ticks: { font: { weight: 'bold' } } },
+                        x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }
+                    }
+                }
+            });
         }
 
         function createGroupedBarChart(id, data) {
@@ -1702,19 +2395,6 @@
             });
         }
 
-        function toggleStatusDropdown(t) { 
-            const menu = document.getElementById('statusMenu' + t);
-            if (menu) menu.classList.toggle('hidden'); 
-        }
-        
-        function updateStatusText(t) {
-            const cbs = document.querySelectorAll('.status-checkbox-' + t);
-            const sel = Array.from(cbs).filter(c => c.checked).map(c => c.value);
-            const label = document.getElementById('statusSelectedText' + t);
-            if (label) label.innerText = sel.length === cbs.length ? "Todos" : (sel.length === 0 ? "Nenhum" : sel.length + " selecionados");
-            if(t === 'Prev') applyFiltersPrev(); else if(t === 'Prod') applyFiltersProd(); else if(t === 'Cal') applyFiltersCal(); else if(t === 'Rank') applyFiltersRank();
-        }
-
         // Função para construir o Relatório Industrial e acionar a impressão
         function prepareAndPrint() {
             const now = new Date();
@@ -1732,13 +2412,17 @@
                 reportTitle = 'Calendário de Lotes e Plantios';
             } else if (!document.getElementById('viewRanking').classList.contains('hidden')) {
                 activeTab = 'Rank';
-                reportTitle = 'Auditoria de Performance e Ranking de Lotes';
+                reportTitle = 'Ranking de Performance Operacional';
+            } else if (!document.getElementById('viewAnalise').classList.contains('hidden')) {
+                activeTab = 'Analise';
+                reportTitle = 'Auditoria Estratégica e Análise Avançada';
             }
 
             const getFilterText = (id) => {
-                const el = document.getElementById(id);
-                if (el.tagName === 'SELECT') return el.options[el.selectedIndex].text;
-                return el.value ? el.value.replace(' to ', ' até ') : 'Todo o Histórico';
+                const el = document.getElementById(`text-${id}`);
+                if (el) return el.innerText;
+                const input = document.getElementById(id);
+                return input && input.value ? input.value.replace(' to ', ' até ') : 'Todo o Histórico';
             };
 
             const inputPeriodo = getFilterText('startMonth' + activeTab);
@@ -1965,6 +2649,67 @@
                                 <th class="ind-right" style="width: 25%">Média</th>
                             </tr>
                             ${renderTableRows(topPeso, 'pMed', 'g') || '<tr><td colspan="3" class="ind-center">Sem dados.</td></tr>'}
+                        </table>
+                    </div>
+                </div>`;
+            } else if (activeTab === 'Analise') {
+                const ana = lastProcessedData.analise;
+                
+                summaryHtml = `
+                    <table class="ind-table">
+                        <tr class="ind-title-row"><td colspan="4">2. KPIs Globais de Desempenho Estratégico</td></tr>
+                        <tr class="ind-header ind-center">
+                            <td style="width: 25%">Acurácia de Volume Estimado</td>
+                            <td style="width: 25%">Atraso de Data Médio (Dias)</td>
+                            <td style="width: 25%">Janela de Colheita Média (Dias)</td>
+                            <td style="width: 25%">Produtividade Relativa (Kg/1000 pl)</td>
+                        </tr>
+                        <tr class="ind-center ind-bold" style="font-size: 11pt;">
+                            <td>${ana.globalAprov}%</td>
+                            <td>${ana.avgAtraso > 0 ? '+'+ana.avgAtraso : ana.avgAtraso}</td>
+                            <td>${ana.avgJanela}</td>
+                            <td>${ana.prod1000.toLocaleString('pt-BR')} kg</td>
+                        </tr>
+                    </table>
+                `;
+
+                // Sazonalidade Table
+                let sazRows = ana.sazChartData.map((val, i) => {
+                    if(!val) return '';
+                    return `<tr><td class="ind-center ind-bold">${nomesDosMeses[i]}</td><td class="ind-right">${val} g</td></tr>`;
+                }).join('');
+
+                // Perdas Table
+                let perdasRows = ana.perdasLabels.map((l, i) => {
+                    return `<tr><td>${l}</td><td class="ind-right">${ana.perdasData[i].toLocaleString('pt-BR')} un</td></tr>`;
+                }).join('');
+
+                // Janela Lenta Table
+                let janelaRows = ana.topJanelas.map(j => {
+                    return `<tr><td>${j.name}</td><td class="ind-right">${j.days} dias</td></tr>`;
+                }).join('');
+
+                detailHtml = `
+                <div style="display: flex; gap: 15px; align-items: flex-start; width: 100%;">
+                    <div style="width: 33.3%;">
+                        <table class="ind-table" style="margin-bottom: 0;">
+                            <tr class="ind-title-row"><td colspan="2">3. Curva de Sazonalidade</td></tr>
+                            <tr class="ind-header"><th>Mês de Início</th><th class="ind-right">Peso Médio</th></tr>
+                            ${sazRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
+                        </table>
+                    </div>
+                    <div style="width: 33.3%;">
+                        <table class="ind-table" style="margin-bottom: 0;">
+                            <tr class="ind-title-row"><td colspan="2">4. Ofensores de Perda (Refugo)</td></tr>
+                            <tr class="ind-header"><th>Variedade</th><th class="ind-right">Vol. Perdido</th></tr>
+                            ${perdasRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
+                        </table>
+                    </div>
+                    <div style="width: 33.3%;">
+                        <table class="ind-table" style="margin-bottom: 0;">
+                            <tr class="ind-title-row"><td colspan="2">5. Piores Janelas de Corte</td></tr>
+                            <tr class="ind-header"><th>Bloco (Ciclo)</th><th class="ind-right">Duração</th></tr>
+                            ${janelaRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
                         </table>
                     </div>
                 </div>`;
