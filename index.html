@@ -296,6 +296,9 @@
                 <button onclick="switchTab('analise')" id="tab-analise" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2 text-indigo-600">
                     <i data-lucide="microscope" class="w-4 h-4"></i> Análise Avançada 
                 </button>
+                <button onclick="switchTab('comparacao')" id="tab-comparacao" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2 text-brand-600">
+                    <i data-lucide="columns" class="w-4 h-4"></i> Comparação 
+                </button>
             </div>
 
             <div id="mainContent">
@@ -698,7 +701,7 @@
                                 <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('statusCal')">
                                     <span id="text-statusCal" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
                                 </div>
-                                <div id="menu-statusCal" class="dropdown-menu hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border rounded-2xl shadow-float top-full right-0 sm:left-0 overflow-hidden">
+                                <div id="menu-statusCal" class="dropdown-menu hidden absolute z-50 w-full sm:w-[240px] mt-2 bg-white border border-slate-100 rounded-2xl shadow-float top-full right-0 sm:left-0 overflow-hidden">
                                     <div class="max-h-60 overflow-y-auto p-2" id="list-statusCal">
                                         <div class="flex items-center justify-between p-1 hover:bg-slate-50 rounded-xl group">
                                             <label class="flex items-center gap-3 cursor-pointer flex-1 p-1">
@@ -958,7 +961,7 @@
                     </div>
                 </div>
 
-                <!-- VIEW 5: ANÁLISE AVANÇADA (NOVA) -->
+                <!-- VIEW 5: ANÁLISE AVANÇADA -->
                 <div id="viewAnalise" class="hidden flex-col gap-6 animate-fade-in-down">
                     <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
                         <div class="flex flex-wrap gap-3 sm:gap-4 items-end">
@@ -1137,6 +1140,18 @@
                     </div>
                 </div>
 
+                <!-- VIEW 6: COMPARAÇÃO LADO A LADO -->
+                <div id="viewComparacao" class="hidden flex-col gap-6 animate-fade-in-down">
+                    <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col">
+                        <h2 class="text-lg font-black text-slate-800 uppercase tracking-tight mb-2">Comparador Rápido de Lotes</h2>
+                        <p class="text-xs font-semibold text-slate-500 mb-6">Adicione os blocos lado a lado para cruzar e analisar detalhadamente a produtividade, quebras e rendimento final.</p>
+                        
+                        <div id="compareCardsWrapper" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pt-2">
+                            <!-- Cards injectados aqui pelo JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -1164,6 +1179,13 @@
         let allCycles = new Set();
         let lastProcessedData = { prev: null, prod: null, cal: null, rank: null, analise: null }; 
         const nomesDosMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+        // Variáveis de Estado para a aba de Comparação
+        let compareCardIdCounter = 3;
+        let compareCardsState = [
+            { id: 1, bloco: '', ciclo: '' },
+            { id: 2, bloco: '', ciclo: '' }
+        ];
 
         Chart.register(ChartDataLabels);
         Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
@@ -1397,6 +1419,7 @@
                 ['Prev', 'Prod', 'Cal', 'Rank', 'Analise'].forEach(updateVarietyDropdownForTab);
                 ['Prev', 'Prod', 'Cal', 'Rank', 'Analise'].forEach(updateCycleDropdownForTab);
                 applyFiltersPrev(); applyFiltersProd(); applyFiltersCal(); applyFiltersRank(); applyFiltersAnalise();
+                renderCompareCards(); // Renderiza os cartões de comparação
             } catch (err) {
                 console.error("Erro na busca de dados:", err);
             } finally {
@@ -1405,13 +1428,14 @@
         }
 
         function switchTab(tabName) {
-            ['previsao', 'produtividade', 'calendario', 'ranking', 'analise'].forEach(t => {
+            ['previsao', 'produtividade', 'calendario', 'ranking', 'analise', 'comparacao'].forEach(t => {
                 const btn = document.getElementById('tab-' + t);
                 const view = document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1));
                 if (t === tabName) {
                     btn.classList.add('active'); btn.classList.remove('inactive');
                     if (t === 'ranking') btn.classList.add('text-brand-600');
                     if (t === 'analise') btn.classList.add('text-indigo-600');
+                    if (t === 'comparacao') btn.classList.add('text-brand-600');
                     view.classList.remove('hidden'); view.classList.add('flex');
                 } else {
                     btn.classList.remove('active', 'text-brand-600', 'text-indigo-600'); btn.classList.add('inactive');
@@ -2013,10 +2037,9 @@
 
             hist.forEach(r => {
                 const key = `${normalizeStr(r.bloco)}|${normalizeStr(r.ciclo)}|${normalizeStr(r.cultura)}`;
-                if (!lotes[key]) return; // Only process what passed the pend filter
+                if (!lotes[key]) return; 
                 const d = parseGoogleDate(r.data_entrega); if(!d) return;
 
-                // CORREÇÃO: Forçar que os cortes também obedeçam rigorosamente ao período filtrado
                 if(targetStart !== null && (d < targetStart || d > targetEnd)) return;
 
                 lotes[key].colhidas += r.qtd_cabecas;
@@ -2026,14 +2049,13 @@
                 lotes[key].dias_colheita.add(d.toISOString().split('T')[0]);
             });
 
-            // Metrics
             let totalPl = 0, totalCol = 0, totalKg = 0;
             let sumAtraso = 0, countAtraso = 0;
             let sumJanela = 0, countJanela = 0;
             
             const sazonalidade = Array(12).fill().map(() => ({un: 0, kg: 0}));
             const perdas = {};
-            const evolucaoMap = {}; // bloco -> array de ciclos
+            const evolucaoMap = {}; 
             const janelaRanking = [];
 
             Object.values(lotes).forEach(lot => {
@@ -2109,7 +2131,169 @@
             };
         }
 
+        // --- SISTEMA DE COMPARAÇÃO DE CARTÕES LADO A LADO ---
+        function processCompareCardData(bloco, ciclo) {
+            let totalU = 0, totalKg = 0, totalCx = 0, dias = new Set(), dispTotalP = 0;
+            const bNorm = normalizeStr(bloco);
+            const cNorm = normalizeStr(ciclo);
 
+            if (!cachedApiData) return { totalU, totalKg, totalCx, diasProducao: 0, pMedG: 0, percC: 0, percPerda: 0, dispTotalP };
+
+            cachedApiData.historico.forEach(r => {
+                if (bNorm && normalizeStr(r.bloco) !== bNorm) return;
+                if (cNorm && normalizeStr(r.ciclo) !== cNorm) return;
+
+                if (bNorm || cNorm) { 
+                    const d = parseGoogleDate(r.data_entrega);
+                    if (d) dias.add(d.toISOString().split('T')[0]);
+                    totalU += r.qtd_cabecas || 0;
+                    totalKg += r.peso_total_kg || 0;
+                    totalCx += r.caixas || 0;
+                }
+            });
+
+            cachedApiData.pendentes.forEach(b => {
+                if (bNorm && normalizeStr(b.nome) !== bNorm) return;
+                if (cNorm && normalizeStr(b.ciclo) !== cNorm) return;
+                
+                if (bNorm || cNorm) {
+                    dispTotalP += b.qtd_plantas || 0;
+                }
+            });
+
+            const calcP = Math.max(dispTotalP, totalU);
+            const pMedG = totalU > 0 ? Math.round((totalKg / totalU) * 1000) : 0;
+            const percC = calcP > 0 ? Math.min(100, Math.round((totalU / calcP) * 100)) : 0;
+            const percPerda = calcP > 0 ? Math.max(0, 100 - percC) : 0;
+
+            return {
+                totalU, totalKg, totalCx, diasProducao: dias.size,
+                pMedG, percC, percPerda, dispTotalP
+            };
+        }
+
+        function renderCompareCards() {
+            const container = document.getElementById('compareCardsWrapper');
+            if(!container || !cachedApiData) return;
+
+            let html = '';
+            compareCardsState.forEach(card => {
+                const data = processCompareCardData(card.bloco, card.ciclo);
+                
+                const sortedBlocks = Array.from(allBlocks).sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
+                let blockOpts = '<option value="">Selecionar bloco...</option>';
+                sortedBlocks.forEach(b => {
+                    blockOpts += `<option value="${b}" ${card.bloco === b ? 'selected' : ''}>${b}</option>`;
+                });
+
+                let cycleOpts = '<option value="">Todos os Ciclos</option>';
+                if (card.bloco && blockCycleMap[normalizeStr(card.bloco)]) {
+                    const cycles = Array.from(blockCycleMap[normalizeStr(card.bloco)]).sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
+                    cycles.forEach(c => {
+                        cycleOpts += `<option value="${c}" ${card.ciclo === c ? 'selected' : ''}>Ciclo ${c}</option>`;
+                    });
+                } else {
+                    const cycles = Array.from(allCycles).sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
+                    cycles.forEach(c => {
+                        cycleOpts += `<option value="${c}" ${card.ciclo === c ? 'selected' : ''}>Ciclo ${c}</option>`;
+                    });
+                }
+
+                html += `
+                    <div class="bg-white rounded-[24px] shadow-soft border border-slate-100 flex flex-col w-full h-full p-5 relative">
+                        <button onclick="removeCompareCard(${card.id})" class="absolute top-4 right-4 text-slate-400 hover:text-rose-500 transition-colors">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                        <div class="flex gap-2 mb-6 pr-6">
+                            <div class="flex-1">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider">Local</label>
+                                <select onchange="updateCompareCard(${card.id}, 'bloco', this.value)" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate">
+                                    ${blockOpts}
+                                </select>
+                            </div>
+                            <div class="w-24">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider">Ciclo</label>
+                                <select onchange="updateCompareCard(${card.id}, 'ciclo', this.value)" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-brand-500/50 truncate">
+                                    ${cycleOpts}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-y-6 gap-x-4">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Unidades</p>
+                                <p class="text-xl font-black text-slate-800 leading-none">${data.totalU.toLocaleString('pt-BR')}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Peso (kg)</p>
+                                <p class="text-xl font-black text-slate-800 leading-none">${Math.round(data.totalKg).toLocaleString('pt-BR')}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Peso Médio</p>
+                                <p class="text-xl font-black text-slate-800 leading-none">${data.pMedG.toLocaleString('pt-BR')} <span class="text-xs text-slate-400 font-semibold">g</span></p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 text-emerald-600">Colhido</p>
+                                <p class="text-xl font-black text-emerald-600 leading-none">${data.percC}%</p>
+                            </div>
+                            <div class="col-span-2 border-t border-slate-100 pt-4 mt-2"></div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tot. de Plantas</p>
+                                <p class="text-lg font-black text-slate-700 leading-none">${data.dispTotalP.toLocaleString('pt-BR')}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Dias de Prod.</p>
+                                <p class="text-lg font-black text-slate-700 leading-none">${data.diasProducao}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Caixas</p>
+                                <p class="text-lg font-black text-slate-700 leading-none">${data.totalCx.toLocaleString('pt-BR')}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 text-rose-500">Pendente</p>
+                                <p class="text-lg font-black text-rose-500 leading-none">${data.percPerda}%</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                <button onclick="addCompareCard()" class="bg-slate-100/50 hover:bg-slate-100 rounded-[24px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center w-full min-h-[250px] h-full p-5 transition-all text-slate-400 hover:text-brand-600 group">
+                    <div class="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <i data-lucide="plus" class="w-6 h-6"></i>
+                    </div>
+                    <span class="text-sm font-bold tracking-wider uppercase">Adicionar Bloco</span>
+                </button>
+            `;
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function addCompareCard() {
+            compareCardsState.push({ id: compareCardIdCounter++, bloco: '', ciclo: '' });
+            renderCompareCards();
+        }
+
+        function removeCompareCard(id) {
+            compareCardsState = compareCardsState.filter(c => c.id !== id);
+            renderCompareCards();
+        }
+
+        function updateCompareCard(id, field, value) {
+            const card = compareCardsState.find(c => c.id === id);
+            if (card) {
+                card[field] = value;
+                if (field === 'bloco') {
+                    card.ciclo = ''; // Reset cycle when block changes
+                }
+                renderCompareCards();
+            }
+        }
+
+
+        // --- ATUALIZAÇÕES VISUAIS DA TELA ---
         function updatePrevisaoView(res) {
             safeSetText('historicalAvgLabel', res.nomeMesBase === "Geral" ? `Média (gr) (Geral)` : `Média (gr) do anterior (${res.nomeMesBase})`);
             safeSetText('forecastTotalLabel', `Saldo Projetado (${res.labelAlvo})`);
@@ -2416,303 +2600,372 @@
             } else if (!document.getElementById('viewAnalise').classList.contains('hidden')) {
                 activeTab = 'Analise';
                 reportTitle = 'Auditoria Estratégica e Análise Avançada';
+            } else if (!document.getElementById('viewComparacao').classList.contains('hidden')) {
+                activeTab = 'Comparacao';
+                reportTitle = 'Relatório de Comparação de Lotes';
             }
-
-            const getFilterText = (id) => {
-                const el = document.getElementById(`text-${id}`);
-                if (el) return el.innerText;
-                const input = document.getElementById(id);
-                return input && input.value ? input.value.replace(' to ', ' até ') : 'Todo o Histórico';
-            };
-
-            const inputPeriodo = getFilterText('startMonth' + activeTab);
-            const selCultura = getFilterText('cropType' + activeTab);
-            const selVar = getFilterText('varietySearch' + activeTab);
-            const selBloco = getFilterText('blockSearch' + activeTab);
-            const selCiclo = getFilterText('cycleSearch' + activeTab);
 
             let summaryHtml = '';
             let detailHtml = '';
 
-            if (activeTab === 'Prev') {
-                const res = lastProcessedData.prev;
+            if (activeTab === 'Comparacao') {
+                let compHeaders = '';
+                let compUnidades = '';
+                let compPeso = '';
+                let compMedio = '';
+                let compAprov = '';
+                let compPlantas = '';
+                let compDias = '';
+                let compCaixas = '';
+                let compPerda = '';
+
+                compareCardsState.forEach(c => {
+                    const d = processCompareCardData(c.bloco, c.ciclo);
+                    const title = c.bloco ? `${c.bloco} ${c.ciclo ? '(C'+c.ciclo+')' : ''}` : 'Não Selecionado';
+                    
+                    compHeaders += `<th class="ind-center" style="width: ${100/compareCardsState.length}%">${title}</th>`;
+                    compUnidades += `<td class="ind-center">${d.totalU.toLocaleString('pt-BR')}</td>`;
+                    compPeso += `<td class="ind-center">${Math.round(d.totalKg).toLocaleString('pt-BR')} kg</td>`;
+                    compMedio += `<td class="ind-center">${d.pMedG.toLocaleString('pt-BR')} g</td>`;
+                    compAprov += `<td class="ind-center ind-bold" style="color: #059669">${d.percC}%</td>`;
+                    compPlantas += `<td class="ind-center">${d.dispTotalP.toLocaleString('pt-BR')}</td>`;
+                    compDias += `<td class="ind-center">${d.diasProducao}</td>`;
+                    compCaixas += `<td class="ind-center">${d.totalCx.toLocaleString('pt-BR')}</td>`;
+                    compPerda += `<td class="ind-center ind-bold" style="color: #e11d48">${d.percPerda}%</td>`;
+                });
+
                 summaryHtml = `
-                    <table class="ind-table">
-                        <tr class="ind-title-row"><td colspan="6">2. Resumo de Projeção</td></tr>
-                        <tr class="ind-header ind-center">
-                            <td>Média Hist. (g)</td>
-                            <td>Ritmo Atual (un/dia)</td>
-                            <td>Realizado (Un)</td>
-                            <td>Realizado (Kg)</td>
-                            <td>Saldo Proj. (Un)</td>
-                            <td>Saldo Proj. (Kg)</td>
+                    <table class="ind-table" style="margin-top: 20px;">
+                        <tr class="ind-title-row">
+                            <td style="width: 15%">Métrica de Avaliação</td>
+                            ${compHeaders}
                         </tr>
-                        <tr class="ind-center ind-bold" style="font-size: 10pt;">
-                            <td>${res.pesoAvg.toLocaleString('pt-BR')}</td>
-                            <td>${res.ritmo.toLocaleString('pt-BR')}</td>
-                            <td>${res.dUn.toLocaleString('pt-BR')}</td>
-                            <td>${Math.round(res.dKg).toLocaleString('pt-BR')}</td>
-                            <td>${Math.round(res.totalUn).toLocaleString('pt-BR')}</td>
-                            <td>${Math.round(res.totalKg).toLocaleString('pt-BR')}</td>
-                        </tr>
+                        <tr><td class="ind-bold">Aproveitamento Final</td>${compAprov}</tr>
+                        <tr><td class="ind-bold">Peso Médio Global (g/unid)</td>${compMedio}</tr>
+                        <tr><td class="ind-bold">Unidades Totais Colhidas</td>${compUnidades}</tr>
+                        <tr><td class="ind-bold">Peso Total (Kg)</td>${compPeso}</tr>
+                        <tr><td class="ind-bold">Total Inicial de Plantas</td>${compPlantas}</tr>
+                        <tr><td class="ind-bold">Perdas / Pendentes</td>${compPerda}</tr>
+                        <tr><td class="ind-bold">Caixas Registadas</td>${compCaixas}</tr>
+                        <tr><td class="ind-bold">Dias Efetivos de Produção</td>${compDias}</tr>
                     </table>
                 `;
-
-                let rows = res.tabela.map(b => `
-                    <tr>
-                        <td>${b.dObj.toLocaleDateString('pt-BR')}</td>
-                        <td><b>${b.bloco}</b> - Ciclo ${b.ciclo} - ${b.cultura} (${b.variedade})</td>
-                        <td class="ind-center">${b.status}</td>
-                        <td class="ind-center">${Math.round(b.pEfet).toLocaleString('pt-BR')}</td>
-                        <td class="ind-right ind-bold">${Math.round(b.vKg).toLocaleString('pt-BR')}</td>
-                    </tr>
-                `).join('');
-                
-                let dailyRows = res.chartData.map(d => `
-                    <tr>
-                        <td>${d.label}</td>
-                        <td class="ind-center">${Math.round(d.unidades).toLocaleString('pt-BR')}</td>
-                        <td class="ind-right ind-bold">${Math.round(d.peso).toLocaleString('pt-BR')}</td>
-                    </tr>
-                `).join('');
-                
-                detailHtml = `
-                <div style="display: flex; gap: 15px; align-items: flex-start; width: 100%;">
-                    <div style="width: 65%;">
-                        <table class="ind-table" style="margin-bottom: 0;">
-                            <tr class="ind-title-row"><td colspan="5">3. Detalhamento de Lotes para Colheita</td></tr>
-                            <tr class="ind-header">
-                                <th style="width: 15%">Início Est.</th>
-                                <th style="width: 45%">Bloco / Especificação</th>
-                                <th class="ind-center" style="width: 15%">Status</th>
-                                <th class="ind-center" style="width: 15%">Estimativa (Un)</th>
-                                <th class="ind-right" style="width: 10%">Saldo (Kg)</th>
-                            </tr>
-                            ${rows || '<tr><td colspan="5" class="ind-center">Nenhum dado encontrado para os filtros selecionados.</td></tr>'}
-                        </table>
-                    </div>
-                    <div style="width: 35%;">
-                        <table class="ind-table" style="margin-bottom: 0;">
-                            <tr class="ind-title-row"><td colspan="3">4. Projeção Diária</td></tr>
-                            <tr class="ind-header">
-                                <th style="width: 40%">Data</th>
-                                <th class="ind-center" style="width: 30%">Unidades</th>
-                                <th class="ind-right" style="width: 30%">Kg</th>
-                            </tr>
-                            ${dailyRows || '<tr><td colspan="3" class="ind-center">Nenhum dado.</td></tr>'}
-                        </table>
-                    </div>
-                </div>`;
-                
-            } else if (activeTab === 'Prod') {
-                const p = lastProcessedData.prod;
-                summaryHtml = `
-                    <table class="ind-table">
-                        <tr class="ind-title-row"><td colspan="8">2. Resumo de Produtividade</td></tr>
-                        <tr class="ind-header ind-center">
-                            <td>Total Plantas</td>
-                            <td>Unidades Colhidas</td>
-                            <td>Peso Total (Kg)</td>
-                            <td>Média (g)</td>
-                            <td>Caixas</td>
-                            <td>Aproveitamento</td>
-                            <td>Perdas</td>
-                            <td>Dias de Produção</td>
-                        </tr>
-                        <tr class="ind-center ind-bold" style="font-size: 10pt;">
-                            <td>${p.dispTotalP.toLocaleString('pt-BR')}</td>
-                            <td>${p.totalU.toLocaleString('pt-BR')}</td>
-                            <td>${Math.round(p.totalKg).toLocaleString('pt-BR')}</td>
-                            <td>${p.pMedG.toLocaleString('pt-BR')}</td>
-                            <td>${p.totalCx.toLocaleString('pt-BR')}</td>
-                            <td>${p.percC}%</td>
-                            <td>${p.percPerda}%</td>
-                            <td>${p.diasProducao.toLocaleString('pt-BR')}</td>
-                        </tr>
-                    </table>
-                `;
-
-                const vn = Object.keys(p.vars);
-                let rows = vn.map(v => `
-                    <tr>
-                        <td class="ind-bold">${v}</td>
-                        <td class="ind-right">${p.vars[v].un.toLocaleString('pt-BR')}</td>
-                        <td class="ind-right">${Math.round(p.vars[v].kg).toLocaleString('pt-BR')}</td>
-                        <td class="ind-right">${(p.vars[v].un > 0 ? (p.vars[v].kg / p.vars[v].un) : 0).toFixed(3)}</td>
-                        <td class="ind-right">${p.vars[v].cx.toLocaleString('pt-BR')}</td>
-                    </tr>
-                `).join('');
-                
-                detailHtml = `
-                <table class="ind-table">
-                    <tr class="ind-title-row"><td colspan="5">3. Desempenho por Variedade Comercial</td></tr>
-                    <tr class="ind-header">
-                        <th style="width: 40%">Variedade</th>
-                        <th class="ind-right" style="width: 15%">Unidades</th>
-                        <th class="ind-right" style="width: 15%">Peso (Kg)</th>
-                        <th class="ind-right" style="width: 15%">Média (kg/un)</th>
-                        <th class="ind-right" style="width: 15%">Caixas</th>
-                    </tr>
-                    ${rows || '<tr><td colspan="5" class="ind-center">Nenhum dado encontrado para os filtros selecionados.</td></tr>'}
-                </table>`;
-                
-            } else if (activeTab === 'Cal') {
-                const cal = lastProcessedData.cal;
-                summaryHtml = `
-                    <table class="ind-table">
-                        <tr class="ind-title-row"><td colspan="3">2. Resumo de Ocupação</td></tr>
-                        <tr class="ind-header ind-center">
-                            <td>Total de Plantas Registradas</td>
-                            <td>Total de Lotes Consolidados</td>
-                            <td>Ciclo Real Médio (dias no campo)</td>
-                        </tr>
-                        <tr class="ind-center ind-bold" style="font-size: 10pt;">
-                            <td>${cal.totalP.toLocaleString('pt-BR')}</td>
-                            <td>${cal.totalLotes.toLocaleString('pt-BR')}</td>
-                            <td>${cal.avgCiclo !== null ? cal.avgCiclo : '--'}</td>
-                        </tr>
-                    </table>
-                `;
-
-                let rows = cal.lista.map(b => {
-                    const vars = Array.from(b.variedades).join(", ") || "Não inf.";
-                    return `
-                    <tr>
-                        <td class="ind-center">${b.dataPlantio ? b.dataPlantio.toLocaleDateString('pt-BR') : '-'}</td>
-                        <td class="ind-center">${b.dataEst.toLocaleDateString('pt-BR')}</td>
-                        <td class="ind-center">${b.dataReal ? b.dataReal.toLocaleDateString('pt-BR') : '-'} ${b.cicloRealDias !== null ? `<br><span style="font-size:6pt;color:#555">(${b.cicloRealDias} dias)</span>` : ''}</td>
-                        <td><b>${b.bloco}</b> - Ciclo ${b.ciclo}<br><span style="font-size:7pt;color:#555">${b.cultura} (${vars})</span></td>
-                        <td class="ind-center">${b.status}</td>
-                        <td class="ind-right ind-bold">${b.total.toLocaleString('pt-BR')}</td>
-                    </tr>`;
-                }).join('');
-
-                detailHtml = `
-                <table class="ind-table">
-                    <tr class="ind-title-row"><td colspan="6">3. Mapa de Lotes e Plantios</td></tr>
-                    <tr class="ind-header">
-                        <th class="ind-center" style="width: 12%">Plantio</th>
-                        <th class="ind-center" style="width: 12%">Início Est.</th>
-                        <th class="ind-center" style="width: 15%">Início Real</th>
-                        <th style="width: 35%">Bloco / Especificação</th>
-                        <th class="ind-center" style="width: 14%">Status</th>
-                        <th class="ind-right" style="width: 12%">Plantas</th>
-                    </tr>
-                    ${rows || '<tr><td colspan="6" class="ind-center">Nenhum plantio encontrado.</td></tr>'}
-                </table>`;
-            } else if (activeTab === 'Rank') {
-                const list = lastProcessedData.rank;
-                const topAprov = [...list].sort((a,b) => b.aprov - a.aprov || b.pMed - a.pMed).slice(0, 10);
-                const worstAprov = [...list].sort((a,b) => a.aprov - b.aprov || a.pMed - b.pMed).slice(0, 10);
-                const topPeso = [...list].sort((a,b) => b.pMed - a.pMed || b.aprov - a.aprov).slice(0, 10);
-
-                let renderTableRows = (dataArr, valKey, suffix) => {
-                    return dataArr.map((b, i) => `
-                        <tr>
-                            <td class="ind-center">${i + 1}º</td>
-                            <td><b>${b.bloco}</b> - Ciclo ${b.ciclo} <span style="font-size:6.5pt; color:#555">(${b.cultura})</span></td>
-                            <td class="ind-right ind-bold">${b[valKey].toLocaleString('pt-BR')}${suffix}</td>
-                        </tr>
-                    `).join('');
+            } else {
+                const getFilterText = (id) => {
+                    const el = document.getElementById(`text-${id}`);
+                    if (el) return el.innerText;
+                    const input = document.getElementById(id);
+                    return input && input.value ? input.value.replace(' to ', ' até ') : 'Todo o Histórico';
                 };
 
-                detailHtml = `
-                <div style="display: flex; gap: 10px; align-items: flex-start; width: 100%;">
-                    <div style="width: 33.3%;">
-                        <table class="ind-table" style="margin-bottom: 0;">
-                            <tr class="ind-title-row"><td colspan="3">Melhores Aproveitamentos</td></tr>
-                            <tr class="ind-header">
-                                <th style="width: 15%">Pos</th>
-                                <th style="width: 60%">Bloco</th>
-                                <th class="ind-right" style="width: 25%">Aprov.</th>
+                const inputPeriodo = getFilterText('startMonth' + activeTab);
+                const selCultura = getFilterText('cropType' + activeTab);
+                const selVar = getFilterText('varietySearch' + activeTab);
+                const selBloco = getFilterText('blockSearch' + activeTab);
+                const selCiclo = getFilterText('cycleSearch' + activeTab);
+
+                if (activeTab === 'Prev') {
+                    const res = lastProcessedData.prev;
+                    summaryHtml = `
+                        <table class="ind-table">
+                            <tr class="ind-title-row"><td colspan="6">2. Resumo de Projeção</td></tr>
+                            <tr class="ind-header ind-center">
+                                <td>Média Hist. (g)</td>
+                                <td>Ritmo Atual (un/dia)</td>
+                                <td>Realizado (Un)</td>
+                                <td>Realizado (Kg)</td>
+                                <td>Saldo Proj. (Un)</td>
+                                <td>Saldo Proj. (Kg)</td>
                             </tr>
-                            ${renderTableRows(topAprov, 'aprov', '%') || '<tr><td colspan="3" class="ind-center">Sem dados.</td></tr>'}
-                        </table>
-                    </div>
-                    <div style="width: 33.3%;">
-                        <table class="ind-table" style="margin-bottom: 0;">
-                            <tr class="ind-title-row"><td colspan="3">Piores Aproveitamentos</td></tr>
-                            <tr class="ind-header">
-                                <th style="width: 15%">Pos</th>
-                                <th style="width: 60%">Bloco</th>
-                                <th class="ind-right" style="width: 25%">Aprov.</th>
+                            <tr class="ind-center ind-bold" style="font-size: 10pt;">
+                                <td>${res.pesoAvg.toLocaleString('pt-BR')}</td>
+                                <td>${res.ritmo.toLocaleString('pt-BR')}</td>
+                                <td>${res.dUn.toLocaleString('pt-BR')}</td>
+                                <td>${Math.round(res.dKg).toLocaleString('pt-BR')}</td>
+                                <td>${Math.round(res.totalUn).toLocaleString('pt-BR')}</td>
+                                <td>${Math.round(res.totalKg).toLocaleString('pt-BR')}</td>
                             </tr>
-                            ${renderTableRows(worstAprov, 'aprov', '%') || '<tr><td colspan="3" class="ind-center">Sem dados.</td></tr>'}
                         </table>
-                    </div>
-                    <div style="width: 33.3%;">
-                        <table class="ind-table" style="margin-bottom: 0;">
-                            <tr class="ind-title-row"><td colspan="3">Maiores Pesos Médios</td></tr>
-                            <tr class="ind-header">
-                                <th style="width: 15%">Pos</th>
-                                <th style="width: 60%">Bloco</th>
-                                <th class="ind-right" style="width: 25%">Média</th>
-                            </tr>
-                            ${renderTableRows(topPeso, 'pMed', 'g') || '<tr><td colspan="3" class="ind-center">Sem dados.</td></tr>'}
-                        </table>
-                    </div>
-                </div>`;
-            } else if (activeTab === 'Analise') {
-                const ana = lastProcessedData.analise;
-                
-                summaryHtml = `
-                    <table class="ind-table">
-                        <tr class="ind-title-row"><td colspan="4">2. KPIs Globais de Desempenho Estratégico</td></tr>
-                        <tr class="ind-header ind-center">
-                            <td style="width: 25%">Acurácia de Volume Estimado</td>
-                            <td style="width: 25%">Atraso de Data Médio (Dias)</td>
-                            <td style="width: 25%">Janela de Colheita Média (Dias)</td>
-                            <td style="width: 25%">Produtividade Relativa (Kg/1000 pl)</td>
+                    `;
+
+                    let rows = res.tabela.map(b => `
+                        <tr>
+                            <td>${b.dObj.toLocaleDateString('pt-BR')}</td>
+                            <td><b>${b.bloco}</b> - Ciclo ${b.ciclo} - ${b.cultura} (${b.variedade})</td>
+                            <td class="ind-center">${b.status}</td>
+                            <td class="ind-center">${Math.round(b.pEfet).toLocaleString('pt-BR')}</td>
+                            <td class="ind-right ind-bold">${Math.round(b.vKg).toLocaleString('pt-BR')}</td>
                         </tr>
-                        <tr class="ind-center ind-bold" style="font-size: 11pt;">
-                            <td>${ana.globalAprov}%</td>
-                            <td>${ana.avgAtraso > 0 ? '+'+ana.avgAtraso : ana.avgAtraso}</td>
-                            <td>${ana.avgJanela}</td>
-                            <td>${ana.prod1000.toLocaleString('pt-BR')} kg</td>
+                    `).join('');
+                    
+                    let dailyRows = res.chartData.map(d => `
+                        <tr>
+                            <td>${d.label}</td>
+                            <td class="ind-center">${Math.round(d.unidades).toLocaleString('pt-BR')}</td>
+                            <td class="ind-right ind-bold">${Math.round(d.peso).toLocaleString('pt-BR')}</td>
+                        </tr>
+                    `).join('');
+                    
+                    detailHtml = `
+                    <div style="display: flex; gap: 15px; align-items: flex-start; width: 100%;">
+                        <div style="width: 65%;">
+                            <table class="ind-table" style="margin-bottom: 0;">
+                                <tr class="ind-title-row"><td colspan="5">3. Detalhamento de Lotes para Colheita</td></tr>
+                                <tr class="ind-header">
+                                    <th style="width: 15%">Início Est.</th>
+                                    <th style="width: 45%">Bloco / Especificação</th>
+                                    <th class="ind-center" style="width: 15%">Status</th>
+                                    <th class="ind-center" style="width: 15%">Estimativa (Un)</th>
+                                    <th class="ind-right" style="width: 10%">Saldo (Kg)</th>
+                                </tr>
+                                ${rows || '<tr><td colspan="5" class="ind-center">Nenhum dado encontrado para os filtros selecionados.</td></tr>'}
+                            </table>
+                        </div>
+                        <div style="width: 35%;">
+                            <table class="ind-table" style="margin-bottom: 0;">
+                                <tr class="ind-title-row"><td colspan="3">4. Projeção Diária</td></tr>
+                                <tr class="ind-header">
+                                    <th style="width: 40%">Data</th>
+                                    <th class="ind-center" style="width: 30%">Unidades</th>
+                                    <th class="ind-right" style="width: 30%">Kg</th>
+                                </tr>
+                                ${dailyRows || '<tr><td colspan="3" class="ind-center">Nenhum dado.</td></tr>'}
+                            </table>
+                        </div>
+                    </div>`;
+                    
+                } else if (activeTab === 'Prod') {
+                    const p = lastProcessedData.prod;
+                    summaryHtml = `
+                        <table class="ind-table">
+                            <tr class="ind-title-row"><td colspan="8">2. Resumo de Produtividade</td></tr>
+                            <tr class="ind-header ind-center">
+                                <td>Total Plantas</td>
+                                <td>Unidades Colhidas</td>
+                                <td>Peso Total (Kg)</td>
+                                <td>Média (g)</td>
+                                <td>Caixas</td>
+                                <td>Aproveitamento</td>
+                                <td>Perdas</td>
+                                <td>Dias de Produção</td>
+                            </tr>
+                            <tr class="ind-center ind-bold" style="font-size: 10pt;">
+                                <td>${p.dispTotalP.toLocaleString('pt-BR')}</td>
+                                <td>${p.totalU.toLocaleString('pt-BR')}</td>
+                                <td>${Math.round(p.totalKg).toLocaleString('pt-BR')}</td>
+                                <td>${p.pMedG.toLocaleString('pt-BR')}</td>
+                                <td>${p.totalCx.toLocaleString('pt-BR')}</td>
+                                <td>${p.percC}%</td>
+                                <td>${p.percPerda}%</td>
+                                <td>${p.diasProducao.toLocaleString('pt-BR')}</td>
+                            </tr>
+                        </table>
+                    `;
+
+                    const vn = Object.keys(p.vars);
+                    let rows = vn.map(v => `
+                        <tr>
+                            <td class="ind-bold">${v}</td>
+                            <td class="ind-right">${p.vars[v].un.toLocaleString('pt-BR')}</td>
+                            <td class="ind-right">${Math.round(p.vars[v].kg).toLocaleString('pt-BR')}</td>
+                            <td class="ind-right">${(p.vars[v].un > 0 ? (p.vars[v].kg / p.vars[v].un) : 0).toFixed(3)}</td>
+                            <td class="ind-right">${p.vars[v].cx.toLocaleString('pt-BR')}</td>
+                        </tr>
+                    `).join('');
+                    
+                    detailHtml = `
+                    <table class="ind-table">
+                        <tr class="ind-title-row"><td colspan="5">3. Desempenho por Variedade Comercial</td></tr>
+                        <tr class="ind-header">
+                            <th style="width: 40%">Variedade</th>
+                            <th class="ind-right" style="width: 15%">Unidades</th>
+                            <th class="ind-right" style="width: 15%">Peso (Kg)</th>
+                            <th class="ind-right" style="width: 15%">Média (kg/un)</th>
+                            <th class="ind-right" style="width: 15%">Caixas</th>
+                        </tr>
+                        ${rows || '<tr><td colspan="5" class="ind-center">Nenhum dado encontrado para os filtros selecionados.</td></tr>'}
+                    </table>`;
+                    
+                } else if (activeTab === 'Cal') {
+                    const cal = lastProcessedData.cal;
+                    summaryHtml = `
+                        <table class="ind-table">
+                            <tr class="ind-title-row"><td colspan="3">2. Resumo de Ocupação</td></tr>
+                            <tr class="ind-header ind-center">
+                                <td>Total de Plantas Registradas</td>
+                                <td>Total de Lotes Consolidados</td>
+                                <td>Ciclo Real Médio (dias no campo)</td>
+                            </tr>
+                            <tr class="ind-center ind-bold" style="font-size: 10pt;">
+                                <td>${cal.totalP.toLocaleString('pt-BR')}</td>
+                                <td>${cal.totalLotes.toLocaleString('pt-BR')}</td>
+                                <td>${cal.avgCiclo !== null ? cal.avgCiclo : '--'}</td>
+                            </tr>
+                        </table>
+                    `;
+
+                    let rows = cal.lista.map(b => {
+                        const vars = Array.from(b.variedades).join(", ") || "Não inf.";
+                        return `
+                        <tr>
+                            <td class="ind-center">${b.dataPlantio ? b.dataPlantio.toLocaleDateString('pt-BR') : '-'}</td>
+                            <td class="ind-center">${b.dataEst.toLocaleDateString('pt-BR')}</td>
+                            <td class="ind-center">${b.dataReal ? b.dataReal.toLocaleDateString('pt-BR') : '-'} ${b.cicloRealDias !== null ? `<br><span style="font-size:6pt;color:#555">(${b.cicloRealDias} dias)</span>` : ''}</td>
+                            <td><b>${b.bloco}</b> - Ciclo ${b.ciclo}<br><span style="font-size:7pt;color:#555">${b.cultura} (${vars})</span></td>
+                            <td class="ind-center">${b.status}</td>
+                            <td class="ind-right ind-bold">${b.total.toLocaleString('pt-BR')}</td>
+                        </tr>`;
+                    }).join('');
+
+                    detailHtml = `
+                    <table class="ind-table">
+                        <tr class="ind-title-row"><td colspan="6">3. Mapa de Lotes e Plantios</td></tr>
+                        <tr class="ind-header">
+                            <th class="ind-center" style="width: 12%">Plantio</th>
+                            <th class="ind-center" style="width: 12%">Início Est.</th>
+                            <th class="ind-center" style="width: 15%">Início Real</th>
+                            <th style="width: 35%">Bloco / Especificação</th>
+                            <th class="ind-center" style="width: 14%">Status</th>
+                            <th class="ind-right" style="width: 12%">Plantas</th>
+                        </tr>
+                        ${rows || '<tr><td colspan="6" class="ind-center">Nenhum plantio encontrado.</td></tr>'}
+                    </table>`;
+                } else if (activeTab === 'Rank') {
+                    const list = lastProcessedData.rank;
+                    const topAprov = [...list].sort((a,b) => b.aprov - a.aprov || b.pMed - a.pMed).slice(0, 10);
+                    const worstAprov = [...list].sort((a,b) => a.aprov - b.aprov || a.pMed - b.pMed).slice(0, 10);
+                    const topPeso = [...list].sort((a,b) => b.pMed - a.pMed || b.aprov - a.aprov).slice(0, 10);
+
+                    let renderTableRows = (dataArr, valKey, suffix) => {
+                        return dataArr.map((b, i) => `
+                            <tr>
+                                <td class="ind-center">${i + 1}º</td>
+                                <td><b>${b.bloco}</b> - Ciclo ${b.ciclo} <span style="font-size:6.5pt; color:#555">(${b.cultura})</span></td>
+                                <td class="ind-right ind-bold">${b[valKey].toLocaleString('pt-BR')}${suffix}</td>
+                            </tr>
+                        `).join('');
+                    };
+
+                    detailHtml = `
+                    <div style="display: flex; gap: 10px; align-items: flex-start; width: 100%;">
+                        <div style="width: 33.3%;">
+                            <table class="ind-table" style="margin-bottom: 0;">
+                                <tr class="ind-title-row"><td colspan="3">Melhores Aproveitamentos</td></tr>
+                                <tr class="ind-header">
+                                    <th style="width: 15%">Pos</th>
+                                    <th style="width: 60%">Bloco</th>
+                                    <th class="ind-right" style="width: 25%">Aprov.</th>
+                                </tr>
+                                ${renderTableRows(topAprov, 'aprov', '%') || '<tr><td colspan="3" class="ind-center">Sem dados.</td></tr>'}
+                            </table>
+                        </div>
+                        <div style="width: 33.3%;">
+                            <table class="ind-table" style="margin-bottom: 0;">
+                                <tr class="ind-title-row"><td colspan="3">Piores Aproveitamentos</td></tr>
+                                <tr class="ind-header">
+                                    <th style="width: 15%">Pos</th>
+                                    <th style="width: 60%">Bloco</th>
+                                    <th class="ind-right" style="width: 25%">Aprov.</th>
+                                </tr>
+                                ${renderTableRows(worstAprov, 'aprov', '%') || '<tr><td colspan="3" class="ind-center">Sem dados.</td></tr>'}
+                            </table>
+                        </div>
+                        <div style="width: 33.3%;">
+                            <table class="ind-table" style="margin-bottom: 0;">
+                                <tr class="ind-title-row"><td colspan="3">Maiores Pesos Médios</td></tr>
+                                <tr class="ind-header">
+                                    <th style="width: 15%">Pos</th>
+                                    <th style="width: 60%">Bloco</th>
+                                    <th class="ind-right" style="width: 25%">Média</th>
+                                </tr>
+                                ${renderTableRows(topPeso, 'pMed', 'g') || '<tr><td colspan="3" class="ind-center">Sem dados.</td></tr>'}
+                            </table>
+                        </div>
+                    </div>`;
+                } else if (activeTab === 'Analise') {
+                    const ana = lastProcessedData.analise;
+                    
+                    summaryHtml = `
+                        <table class="ind-table">
+                            <tr class="ind-title-row"><td colspan="4">2. KPIs Globais de Desempenho Estratégico</td></tr>
+                            <tr class="ind-header ind-center">
+                                <td style="width: 25%">Acurácia de Volume Estimado</td>
+                                <td style="width: 25%">Atraso de Data Médio (Dias)</td>
+                                <td style="width: 25%">Janela de Colheita Média (Dias)</td>
+                                <td style="width: 25%">Produtividade Relativa (Kg/1000 pl)</td>
+                            </tr>
+                            <tr class="ind-center ind-bold" style="font-size: 11pt;">
+                                <td>${ana.globalAprov}%</td>
+                                <td>${ana.avgAtraso > 0 ? '+'+ana.avgAtraso : ana.avgAtraso}</td>
+                                <td>${ana.avgJanela}</td>
+                                <td>${ana.prod1000.toLocaleString('pt-BR')} kg</td>
+                            </tr>
+                        </table>
+                    `;
+
+                    // Sazonalidade Table
+                    let sazRows = ana.sazChartData.map((val, i) => {
+                        if(!val) return '';
+                        return `<tr><td class="ind-center ind-bold">${nomesDosMeses[i]}</td><td class="ind-right">${val} g</td></tr>`;
+                    }).join('');
+
+                    // Perdas Table
+                    let perdasRows = ana.perdasLabels.map((l, i) => {
+                        return `<tr><td>${l}</td><td class="ind-right">${ana.perdasData[i].toLocaleString('pt-BR')} un</td></tr>`;
+                    }).join('');
+
+                    // Janela Lenta Table
+                    let janelaRows = ana.topJanelas.map(j => {
+                        return `<tr><td>${j.name}</td><td class="ind-right">${j.days} dias</td></tr>`;
+                    }).join('');
+
+                    detailHtml = `
+                    <div style="display: flex; gap: 15px; align-items: flex-start; width: 100%;">
+                        <div style="width: 33.3%;">
+                            <table class="ind-table" style="margin-bottom: 0;">
+                                <tr class="ind-title-row"><td colspan="2">3. Curva de Sazonalidade</td></tr>
+                                <tr class="ind-header"><th>Mês de Início</th><th class="ind-right">Peso Médio</th></tr>
+                                ${sazRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
+                            </table>
+                        </div>
+                        <div style="width: 33.3%;">
+                            <table class="ind-table" style="margin-bottom: 0;">
+                                <tr class="ind-title-row"><td colspan="2">4. Ofensores de Perda (Refugo)</td></tr>
+                                <tr class="ind-header"><th>Variedade</th><th class="ind-right">Vol. Perdido</th></tr>
+                                ${perdasRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
+                            </table>
+                        </div>
+                        <div style="width: 33.3%;">
+                            <table class="ind-table" style="margin-bottom: 0;">
+                                <tr class="ind-title-row"><td colspan="2">5. Piores Janelas de Corte</td></tr>
+                                <tr class="ind-header"><th>Bloco (Ciclo)</th><th class="ind-right">Duração</th></tr>
+                                ${janelaRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
+                            </table>
+                        </div>
+                    </div>`;
+                }
+
+                detailHtml = `
+                    <table class="ind-table">
+                        <tr class="ind-title-row"><td colspan="4">1. Parâmetros da Análise (Filtros globais)</td></tr>
+                        <tr>
+                            <th class="ind-header" style="width: 20%">Período:</th>
+                            <td style="width: 30%">${inputPeriodo}</td>
+                            <th class="ind-header" style="width: 20%">Cultura:</th>
+                            <td style="width: 30%">${selCultura}</td>
+                        </tr>
+                        <tr>
+                            <th class="ind-header">Bloco:</th>
+                            <td>${selBloco}</td>
+                            <th class="ind-header">Variedade:</th>
+                            <td>${selVar}</td>
+                        </tr>
+                        <tr>
+                            <th class="ind-header">Ciclo:</th>
+                            <td colspan="3">${selCiclo}</td>
                         </tr>
                     </table>
-                `;
-
-                // Sazonalidade Table
-                let sazRows = ana.sazChartData.map((val, i) => {
-                    if(!val) return '';
-                    return `<tr><td class="ind-center ind-bold">${nomesDosMeses[i]}</td><td class="ind-right">${val} g</td></tr>`;
-                }).join('');
-
-                // Perdas Table
-                let perdasRows = ana.perdasLabels.map((l, i) => {
-                    return `<tr><td>${l}</td><td class="ind-right">${ana.perdasData[i].toLocaleString('pt-BR')} un</td></tr>`;
-                }).join('');
-
-                // Janela Lenta Table
-                let janelaRows = ana.topJanelas.map(j => {
-                    return `<tr><td>${j.name}</td><td class="ind-right">${j.days} dias</td></tr>`;
-                }).join('');
-
-                detailHtml = `
-                <div style="display: flex; gap: 15px; align-items: flex-start; width: 100%;">
-                    <div style="width: 33.3%;">
-                        <table class="ind-table" style="margin-bottom: 0;">
-                            <tr class="ind-title-row"><td colspan="2">3. Curva de Sazonalidade</td></tr>
-                            <tr class="ind-header"><th>Mês de Início</th><th class="ind-right">Peso Médio</th></tr>
-                            ${sazRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
-                        </table>
-                    </div>
-                    <div style="width: 33.3%;">
-                        <table class="ind-table" style="margin-bottom: 0;">
-                            <tr class="ind-title-row"><td colspan="2">4. Ofensores de Perda (Refugo)</td></tr>
-                            <tr class="ind-header"><th>Variedade</th><th class="ind-right">Vol. Perdido</th></tr>
-                            ${perdasRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
-                        </table>
-                    </div>
-                    <div style="width: 33.3%;">
-                        <table class="ind-table" style="margin-bottom: 0;">
-                            <tr class="ind-title-row"><td colspan="2">5. Piores Janelas de Corte</td></tr>
-                            <tr class="ind-header"><th>Bloco (Ciclo)</th><th class="ind-right">Duração</th></tr>
-                            ${janelaRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
-                        </table>
-                    </div>
-                </div>`;
+                ` + detailHtml;
             }
 
             const printContainer = document.getElementById('printDocumentContainer');
@@ -2740,28 +2993,7 @@
                     </tr>
                 </table>
 
-                <table class="ind-table">
-                    <tr class="ind-title-row"><td colspan="4">1. Parâmetros da Análise (Filtros)</td></tr>
-                    <tr>
-                        <th class="ind-header" style="width: 20%">Período:</th>
-                        <td style="width: 30%">${inputPeriodo}</td>
-                        <th class="ind-header" style="width: 20%">Cultura:</th>
-                        <td style="width: 30%">${selCultura}</td>
-                    </tr>
-                    <tr>
-                        <th class="ind-header">Bloco:</th>
-                        <td>${selBloco}</td>
-                        <th class="ind-header">Variedade:</th>
-                        <td>${selVar}</td>
-                    </tr>
-                    <tr>
-                        <th class="ind-header">Ciclo:</th>
-                        <td colspan="3">${selCiclo}</td>
-                    </tr>
-                </table>
-
                 ${summaryHtml}
-                
                 ${detailHtml}
 
                 <div style="font-size: 6.5pt; color: #555; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 3px;">
