@@ -76,6 +76,15 @@
             flex-direction: row !important;
         }
 
+        /* CORREÇÃO DO GRID DE DIAS: Evita que o Tailwind esconda os dias vazios e quebre o calendário */
+        .flatpickr-day.hidden {
+            display: flex !important;
+            visibility: hidden !important;
+        }
+        .dayContainer {
+            justify-content: flex-start !important;
+        }
+
         .flatpickr-shortcuts-sidebar {
             width: 180px;
             background: #f8fafc;
@@ -2579,6 +2588,27 @@
             });
         }
 
+        function updateStatusText(t) {
+            const cbs = document.querySelectorAll('.checkbox-status' + t);
+            const sel = Array.from(cbs).filter(c => c.checked).map(c => c.value);
+            const label = document.getElementById('text-status' + t);
+            if (label) {
+                if (sel.length === cbs.length) {
+                    label.innerText = "Todos";
+                } else if (sel.length === 0) {
+                    label.innerText = "Nenhum";
+                } else {
+                    label.innerText = sel.join(', ');
+                }
+            }
+            
+            if(t === 'Prev') applyFiltersPrev(); 
+            else if(t === 'Prod') applyFiltersProd(); 
+            else if(t === 'Cal') applyFiltersCal(); 
+            else if(t === 'Rank') applyFiltersRank(); 
+            else if(t === 'Analise') applyFiltersAnalise();
+        }
+
         // Função para construir o Relatório Industrial e acionar a impressão
         function prepareAndPrint() {
             const now = new Date();
@@ -2882,69 +2912,70 @@
                             </table>
                         </div>
                     </div>`;
-                } else if (activeTab === 'Analise') {
-                    const ana = lastProcessedData.analise;
-                    
-                    summaryHtml = `
-                        <table class="ind-table">
-                            <tr class="ind-title-row"><td colspan="4">2. KPIs Globais de Desempenho Estratégico</td></tr>
-                            <tr class="ind-header ind-center">
-                                <td style="width: 25%">Acurácia de Volume Estimado</td>
-                                <td style="width: 25%">Atraso de Data Médio (Dias)</td>
-                                <td style="width: 25%">Janela de Colheita Média (Dias)</td>
-                                <td style="width: 25%">Produtividade Relativa (Kg/1000 pl)</td>
-                            </tr>
-                            <tr class="ind-center ind-bold" style="font-size: 11pt;">
-                                <td>${ana.globalAprov}%</td>
-                                <td>${ana.avgAtraso > 0 ? '+'+ana.avgAtraso : ana.avgAtraso}</td>
-                                <td>${ana.avgJanela}</td>
-                                <td>${ana.prod1000.toLocaleString('pt-BR')} kg</td>
-                            </tr>
+            } else if (activeTab === 'Analise') {
+                const ana = lastProcessedData.analise;
+                
+                summaryHtml = `
+                    <table class="ind-table">
+                        <tr class="ind-title-row"><td colspan="4">2. KPIs Globais de Desempenho Estratégico</td></tr>
+                        <tr class="ind-header ind-center">
+                            <td style="width: 25%">Acurácia de Volume Estimado</td>
+                            <td style="width: 25%">Atraso de Data Médio (Dias)</td>
+                            <td style="width: 25%">Janela de Colheita Média (Dias)</td>
+                            <td style="width: 25%">Produtividade Relativa (Kg/1000 pl)</td>
+                        </tr>
+                        <tr class="ind-center ind-bold" style="font-size: 11pt;">
+                            <td>${ana.globalAprov}%</td>
+                            <td>${ana.avgAtraso > 0 ? '+'+ana.avgAtraso : ana.avgAtraso}</td>
+                            <td>${ana.avgJanela}</td>
+                            <td>${ana.prod1000.toLocaleString('pt-BR')} kg</td>
+                        </tr>
+                    </table>
+                `;
+
+                // Sazonalidade Table
+                let sazRows = ana.sazChartData.map((val, i) => {
+                    if(!val) return '';
+                    return `<tr><td class="ind-center ind-bold">${nomesDosMeses[i]}</td><td class="ind-right">${val} g</td></tr>`;
+                }).join('');
+
+                // Perdas Table
+                let perdasRows = ana.perdasLabels.map((l, i) => {
+                    return `<tr><td>${l}</td><td class="ind-right">${ana.perdasData[i].toLocaleString('pt-BR')} un</td></tr>`;
+                }).join('');
+
+                // Janela Lenta Table
+                let janelaRows = ana.topJanelas.map(j => {
+                    return `<tr><td>${j.name}</td><td class="ind-right">${j.days} dias</td></tr>`;
+                }).join('');
+
+                detailHtml = `
+                <div style="display: flex; gap: 15px; align-items: flex-start; width: 100%;">
+                    <div style="width: 33.3%;">
+                        <table class="ind-table" style="margin-bottom: 0;">
+                            <tr class="ind-title-row"><td colspan="2">3. Curva de Sazonalidade</td></tr>
+                            <tr class="ind-header"><th>Mês de Início</th><th class="ind-right">Peso Médio</th></tr>
+                            ${sazRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
                         </table>
-                    `;
+                    </div>
+                    <div style="width: 33.3%;">
+                        <table class="ind-table" style="margin-bottom: 0;">
+                            <tr class="ind-title-row"><td colspan="2">4. Ofensores de Perda (Refugo)</td></tr>
+                            <tr class="ind-header"><th>Variedade</th><th class="ind-right">Vol. Perdido</th></tr>
+                            ${perdasRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
+                        </table>
+                    </div>
+                    <div style="width: 33.3%;">
+                        <table class="ind-table" style="margin-bottom: 0;">
+                            <tr class="ind-title-row"><td colspan="2">5. Piores Janelas de Corte</td></tr>
+                            <tr class="ind-header"><th>Bloco (Ciclo)</th><th class="ind-right">Duração</th></tr>
+                            ${janelaRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
+                        </table>
+                    </div>
+                </div>`;
+            }
 
-                    // Sazonalidade Table
-                    let sazRows = ana.sazChartData.map((val, i) => {
-                        if(!val) return '';
-                        return `<tr><td class="ind-center ind-bold">${nomesDosMeses[i]}</td><td class="ind-right">${val} g</td></tr>`;
-                    }).join('');
-
-                    // Perdas Table
-                    let perdasRows = ana.perdasLabels.map((l, i) => {
-                        return `<tr><td>${l}</td><td class="ind-right">${ana.perdasData[i].toLocaleString('pt-BR')} un</td></tr>`;
-                    }).join('');
-
-                    // Janela Lenta Table
-                    let janelaRows = ana.topJanelas.map(j => {
-                        return `<tr><td>${j.name}</td><td class="ind-right">${j.days} dias</td></tr>`;
-                    }).join('');
-
-                    detailHtml = `
-                    <div style="display: flex; gap: 15px; align-items: flex-start; width: 100%;">
-                        <div style="width: 33.3%;">
-                            <table class="ind-table" style="margin-bottom: 0;">
-                                <tr class="ind-title-row"><td colspan="2">3. Curva de Sazonalidade</td></tr>
-                                <tr class="ind-header"><th>Mês de Início</th><th class="ind-right">Peso Médio</th></tr>
-                                ${sazRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
-                            </table>
-                        </div>
-                        <div style="width: 33.3%;">
-                            <table class="ind-table" style="margin-bottom: 0;">
-                                <tr class="ind-title-row"><td colspan="2">4. Ofensores de Perda (Refugo)</td></tr>
-                                <tr class="ind-header"><th>Variedade</th><th class="ind-right">Vol. Perdido</th></tr>
-                                ${perdasRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
-                            </table>
-                        </div>
-                        <div style="width: 33.3%;">
-                            <table class="ind-table" style="margin-bottom: 0;">
-                                <tr class="ind-title-row"><td colspan="2">5. Piores Janelas de Corte</td></tr>
-                                <tr class="ind-header"><th>Bloco (Ciclo)</th><th class="ind-right">Duração</th></tr>
-                                ${janelaRows || '<tr><td colspan="2" class="ind-center">Sem dados.</td></tr>'}
-                            </table>
-                        </div>
-                    </div>`;
-                }
-
+            if (activeTab !== 'Comparacao') {
                 detailHtml = `
                     <table class="ind-table">
                         <tr class="ind-title-row"><td colspan="4">1. Parâmetros da Análise (Filtros globais)</td></tr>
