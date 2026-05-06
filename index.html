@@ -2975,29 +2975,33 @@
                 </div>`;
             }
 
-            if (activeTab !== 'Comparacao') {
-                detailHtml = `
-                    <table class="ind-table">
-                        <tr class="ind-title-row"><td colspan="4">1. Parâmetros da Análise (Filtros globais)</td></tr>
-                        <tr>
-                            <th class="ind-header" style="width: 20%">Período:</th>
-                            <td style="width: 30%">${inputPeriodo}</td>
-                            <th class="ind-header" style="width: 20%">Cultura:</th>
-                            <td style="width: 30%">${selCultura}</td>
-                        </tr>
-                        <tr>
-                            <th class="ind-header">Bloco:</th>
-                            <td>${selBloco}</td>
-                            <th class="ind-header">Variedade:</th>
-                            <td>${selVar}</td>
-                        </tr>
-                        <tr>
-                            <th class="ind-header">Ciclo:</th>
-                            <td colspan="3">${selCiclo}</td>
-                        </tr>
-                    </table>
-                ` + detailHtml;
-            }
+            // O código "if (activeTab !== 'Comparacao')" foi removido
+            // e substituído diretamente pela lógica dentro do "else" original
+            
+            detailHtml = `
+                <table class="ind-table">
+                    <tr class="ind-title-row"><td colspan="4">1. Parâmetros da Análise (Filtros globais)</td></tr>
+                    <tr>
+                        <th class="ind-header" style="width: 20%">Período:</th>
+                        <td style="width: 30%">${inputPeriodo}</td>
+                        <th class="ind-header" style="width: 20%">Cultura:</th>
+                        <td style="width: 30%">${selCultura}</td>
+                    </tr>
+                    <tr>
+                        <th class="ind-header">Bloco:</th>
+                        <td>${selBloco}</td>
+                        <th class="ind-header">Variedade:</th>
+                        <td>${selVar}</td>
+                    </tr>
+                    <tr>
+                        <th class="ind-header">Ciclo:</th>
+                        <td colspan="3">${selCiclo}</td>
+                    </tr>
+                </table>
+            ` + detailHtml;
+            
+            // A chave de fecho que faltava para fechar o bloco `else {` que abriga todas as abas
+            } 
 
             const printContainer = document.getElementById('printDocumentContainer');
             printContainer.innerHTML = `
