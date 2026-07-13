@@ -247,7 +247,7 @@
                     </div>
 
                     <div id="loginError" class="hidden bg-rose-50 text-rose-600 text-[11px] uppercase tracking-wider font-bold p-3 rounded-xl text-center border border-rose-100 flex items-center justify-center gap-2">
-                        <i data-lucide="alert-circle" class="w-4 h-4"></i> Credenciais inválidas
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i> <span>Credenciais inválidas</span>
                     </div>
 
                     <div>
@@ -286,7 +286,7 @@
             </div>
         </div>
 
-        <div class="container mx-auto p-4 md:p-6 flex flex-col gap-6 max-w-[1400px]">
+        <div class="container mx-auto p-4 md:p-6 flex flex-col gap-6 max-w-[1800px]">
             
             <!-- ABAS DE NAVEGAÇÃO -->
             <div class="print-hide flex gap-6 sm:gap-8 border-b border-slate-200/80 px-2 overflow-x-auto hide-scrollbar pb-1">
@@ -1177,7 +1177,7 @@
     <div id="printDocumentContainer"></div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxc6aGG5-YwKvuocpxPzTu8EQj1q0Wiu4PhuULEiDItBsGN6oprC14lFJjJYTYwbr050A/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJpfmhZ-tQj_phEuvUKx8nSvBzl3dA26xsd7nUEJ7a3M0J1dnL4Ti0nykrN7i0a7LduQ/exec"; 
         let charts = {}; 
         let cachedApiData = null; 
         let cropVarietyMap = {};
@@ -1250,22 +1250,43 @@
             lucide.createIcons(); 
         }
 
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault();
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember-me').checked;
+            const loginError = document.getElementById('loginError');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
 
-            if ((user === 'Assis Paulo' && pass === 'SPG2400@') || (user === 'admin' && pass === 'devtest') || (user === 'Paula Selbach' && pass === 'Selbach@2026') || (user === 'Guilherme Ramos' && pass === 'Gui@2026')) {
-                if (rememberMe) {
-                    localStorage.setItem('spg_logged_in', 'true');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-60', 'cursor-not-allowed');
+            loginError.classList.add('hidden');
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'login', usuario: user, senha: pass })
+                });
+                const resultado = await response.json();
+
+                if (resultado.success) {
+                    if (rememberMe) {
+                        localStorage.setItem('spg_logged_in', 'true');
+                    } else {
+                        sessionStorage.setItem('spg_logged_in', 'true');
+                    }
+                    showApp();
                 } else {
-                    sessionStorage.setItem('spg_logged_in', 'true');
+                    loginError.querySelector('span').innerText = resultado.message || 'Credenciais inválidas';
+                    loginError.classList.remove('hidden');
                 }
-                document.getElementById('loginError').classList.add('hidden');
-                showApp();
-            } else {
-                document.getElementById('loginError').classList.remove('hidden');
+            } catch (err) {
+                console.error('Erro ao validar login:', err);
+                loginError.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
             }
         }
 
