@@ -299,8 +299,11 @@
                 <button onclick="switchTab('calendario')" id="tab-calendario" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2">
                     <i data-lucide="list-todo" class="w-4 h-4"></i> Calendário 
                 </button>
+                <button onclick="switchTab('entregas')" id="tab-entregas" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2">
+                    <i data-lucide="truck" class="w-4 h-4"></i> Entregas
+                </button>
                 <button onclick="switchTab('ranking')" id="tab-ranking" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2">
-                    <i data-lucide="trophy" class="w-4 h-4"></i> Ranking 
+                    <i data-lucide="trophy" class="w-4 h-4"></i> Ranking
                 </button>
                 <button onclick="switchTab('analise')" id="tab-analise" class="tab-btn inactive pb-3 text-sm uppercase tracking-wider flex items-center gap-2 text-indigo-600">
                     <i data-lucide="microscope" class="w-4 h-4"></i> Análise Avançada 
@@ -781,6 +784,96 @@
                     </div>
                 </div>
 
+                <!-- VIEW: ENTREGAS NO PERÍODO -->
+                <div id="viewEntregas" class="hidden flex-col gap-6 animate-fade-in-down">
+                    <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
+                        <div class="flex flex-wrap gap-3 sm:gap-4 items-end">
+                            <div class="flex-auto w-full sm:w-auto min-w-[200px] lg:max-w-[260px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Período</label>
+                                <input type="text" id="startMonthEntregas" class="date-range-picker w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none transition-colors focus:ring-2 focus:ring-brand-500/50 bg-white truncate" placeholder="Período automático">
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Bloco</label>
+                                <div class="relative" id="container-blockSearchEntregas">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('blockSearchEntregas')">
+                                        <span id="text-blockSearchEntregas" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-blockSearchEntregas" class="dropdown-menu hidden absolute z-50 min-w-[240px] w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-blockSearchEntregas"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[100px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Ciclo</label>
+                                <div class="relative" id="container-cycleSearchEntregas">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cycleSearchEntregas')">
+                                        <span id="text-cycleSearchEntregas" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todos</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cycleSearchEntregas" class="dropdown-menu hidden absolute z-50 min-w-[240px] w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cycleSearchEntregas"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[120px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Cultura</label>
+                                <div class="relative" id="container-cropTypeEntregas">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('cropTypeEntregas')">
+                                        <span id="text-cropTypeEntregas" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-cropTypeEntregas" class="dropdown-menu hidden absolute z-50 min-w-[240px] w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-cropTypeEntregas"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-auto w-full sm:w-auto min-w-[140px] transition-all duration-300">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase mb-2 block tracking-wider">Variedade</label>
+                                <div class="relative" id="container-varietySearchEntregas">
+                                    <div class="w-full p-2 border border-slate-200 rounded-xl text-sm font-semibold outline-none cursor-pointer flex justify-between items-center h-[38px] bg-white gap-2" onclick="toggleDropdown('varietySearchEntregas')">
+                                        <span id="text-varietySearchEntregas" class="whitespace-nowrap truncate max-w-[250px] transition-all duration-300">Todas</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    </div>
+                                    <div id="menu-varietySearchEntregas" class="dropdown-menu hidden absolute z-50 min-w-[240px] w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-float p-2 overflow-hidden">
+                                        <div class="max-h-60 overflow-y-auto" id="list-varietySearchEntregas"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="clearFilters('Entregas')" class="flex-auto sm:flex-none shrink-0 min-w-[100px] w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all h-[38px]">
+                                <i data-lucide="eraser" class="w-4 h-4"></i> Limpar
+                            </button>
+                            <button type="button" onclick="fetchData()" class="flex-auto sm:flex-none shrink-0 min-w-[120px] w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-lg h-[38px] transition-all">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="print-hide grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                        <div class="bg-gradient-to-br from-brand-600 to-brand-800 p-5 sm:p-6 rounded-[24px] text-white flex flex-col justify-center relative overflow-hidden">
+                            <i data-lucide="truck" class="absolute -right-4 -bottom-4 w-20 h-20 text-brand-900 opacity-20"></i>
+                            <span class="text-[11px] font-bold text-brand-200 uppercase tracking-widest">Blocos Entregando no Período</span>
+                            <p id="entTotalBlocos" class="text-4xl font-black mt-1">0</p>
+                        </div>
+                        <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col justify-center relative overflow-hidden">
+                            <i data-lucide="layers" class="absolute -right-4 -bottom-4 w-20 h-20 text-slate-100 opacity-50"></i>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Total Entregue (Unidades)</span>
+                            <p id="entTotalUn" class="text-4xl font-black mt-1">0</p>
+                        </div>
+                        <div class="bg-white p-5 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 flex flex-col justify-center relative overflow-hidden">
+                            <i data-lucide="weight" class="absolute -right-4 -bottom-4 w-20 h-20 text-slate-100 opacity-50"></i>
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Total Entregue (Kg)</span>
+                            <p id="entTotalKg" class="text-4xl font-black mt-1">0</p>
+                        </div>
+                    </div>
+                    <div class="print-hide bg-white rounded-[24px] shadow-soft border border-slate-100 overflow-hidden">
+                        <div class="p-4 sm:p-5 border-b bg-slate-50/50"><h3 class="text-sm font-black uppercase">BLOCOS QUE ENTREGARAM NO PERÍODO FILTRADO</h3></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left min-w-[800px]">
+                                <thead class="bg-white text-[10px] text-slate-400 uppercase border-b">
+                                    <tr><th class="p-4 sm:p-5">Bloco / Ciclo / Cultura / Variedades</th><th class="p-4 sm:p-5 text-center">Status Atual</th><th class="p-4 sm:p-5 whitespace-nowrap">1ª Entrega no Período</th><th class="p-4 sm:p-5 whitespace-nowrap">Última Entrega no Período</th><th class="p-4 sm:p-5 text-center whitespace-nowrap">Dias Entregando</th><th class="p-4 sm:p-5 text-right">Total Un</th><th class="p-4 sm:p-5 text-right">Total Kg</th></tr>
+                                </thead>
+                                <tbody id="entTableBody" class="text-sm divide-y divide-slate-50"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- VIEW 4: RANKING -->
                 <div id="viewRanking" class="hidden flex-col gap-6 animate-fade-in-down">
                     <div class="print-hide bg-white p-4 sm:p-6 rounded-[24px] shadow-soft border border-slate-100 relative z-30">
@@ -1186,7 +1279,7 @@
         let allVarieties = new Set();
         let allBlocks = new Set();
         let allCycles = new Set();
-        let lastProcessedData = { prev: null, prod: null, cal: null, rank: null, analise: null }; 
+        let lastProcessedData = { prev: null, prod: null, cal: null, entregas: null, rank: null, analise: null };
         const nomesDosMeses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
         // Variáveis de Estado para a aba de Comparação
@@ -1394,6 +1487,7 @@
                             if (id === 'startMonthPrev') applyFiltersPrev();
                             else if (id === 'startMonthProd') applyFiltersProd();
                             else if (id === 'startMonthCal') applyFiltersCal();
+                            else if (id === 'startMonthEntregas') applyFiltersEntregas();
                             else if (id === 'startMonthRank') applyFiltersRank();
                             else if (id === 'startMonthAnalise') applyFiltersAnalise();
                             instance.close();
@@ -1422,6 +1516,7 @@
             if (document.getElementById('startMonthPrev')) document.getElementById('startMonthPrev').value = "";
             if (document.getElementById('startMonthProd')) document.getElementById('startMonthProd').value = "";
             if (document.getElementById('startMonthCal')) document.getElementById('startMonthCal').value = "";
+            if (document.getElementById('startMonthEntregas')) document.getElementById('startMonthEntregas').value = "";
             if (document.getElementById('startMonthRank')) document.getElementById('startMonthRank').value = "";
             if (document.getElementById('startMonthAnalise')) document.getElementById('startMonthAnalise').value = "";
             
@@ -1436,9 +1531,9 @@
                 buildFilterMaps(cachedApiData);
                 populateFilterDropdowns();
                 
-                ['Prev', 'Prod', 'Cal', 'Rank', 'Analise'].forEach(tab => {
+                ['Prev', 'Prod', 'Cal', 'Entregas', 'Rank', 'Analise'].forEach(tab => {
                     const selectedCrops = getSelected(`cropType${tab}`);
-                    if (selectedCrops.length === 0) { 
+                    if (selectedCrops.length === 0) {
                         const brocolisOpt = Array.from(allCrops).find(c => c.toUpperCase().includes('BRÓCOLIS') || c.toUpperCase() === 'BROCOLIS');
                         if (brocolisOpt) {
                             populateMultiSelect(`cropType${tab}`, Array.from(allCrops).sort(), [brocolisOpt]);
@@ -1446,9 +1541,9 @@
                     }
                 });
 
-                ['Prev', 'Prod', 'Cal', 'Rank', 'Analise'].forEach(updateVarietyDropdownForTab);
-                ['Prev', 'Prod', 'Cal', 'Rank', 'Analise'].forEach(updateCycleDropdownForTab);
-                applyFiltersPrev(); applyFiltersProd(); applyFiltersCal(); applyFiltersRank(); applyFiltersAnalise();
+                ['Prev', 'Prod', 'Cal', 'Entregas', 'Rank', 'Analise'].forEach(updateVarietyDropdownForTab);
+                ['Prev', 'Prod', 'Cal', 'Entregas', 'Rank', 'Analise'].forEach(updateCycleDropdownForTab);
+                applyFiltersPrev(); applyFiltersProd(); applyFiltersCal(); applyFiltersEntregas(); applyFiltersRank(); applyFiltersAnalise();
                 renderCompareCards(); // Renderiza os cartões de comparação
             } catch (err) {
                 console.error("Erro na busca de dados:", err);
@@ -1458,7 +1553,7 @@
         }
 
         function switchTab(tabName) {
-            ['previsao', 'produtividade', 'calendario', 'ranking', 'analise', 'comparacao'].forEach(t => {
+            ['previsao', 'produtividade', 'calendario', 'entregas', 'ranking', 'analise', 'comparacao'].forEach(t => {
                 const btn = document.getElementById('tab-' + t);
                 const view = document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1));
                 if (t === tabName) {
@@ -1499,6 +1594,7 @@
             if(id.endsWith('Prev')) return 'Prev';
             if(id.endsWith('Prod')) return 'Prod';
             if(id.endsWith('Cal')) return 'Cal';
+            if(id.endsWith('Entregas')) return 'Entregas';
             if(id.endsWith('Rank')) return 'Rank';
             if(id.endsWith('Analise')) return 'Analise';
             return '';
@@ -1645,7 +1741,7 @@
             const sortedCrops = Array.from(allCrops).sort();
             const sortedBlocks = Array.from(allBlocks).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
             
-            ['Prev', 'Prod', 'Cal', 'Rank', 'Analise'].forEach(tab => {
+            ['Prev', 'Prod', 'Cal', 'Entregas', 'Rank', 'Analise'].forEach(tab => {
                 populateMultiSelect(`cropType${tab}`, sortedCrops, []);
                 populateMultiSelect(`blockSearch${tab}`, sortedBlocks, []);
             });
@@ -1715,7 +1811,7 @@
             } else if (tab === 'Cal') {
                 statusCbs.forEach(cb => cb.checked = (normalizeStr(cb.value) === normalizeStr('Pendente')));
                 document.getElementById(`text-status${tab}`).innerText = 'Pendente';
-            } else {
+            } else if (tab !== 'Entregas') {
                 statusCbs.forEach(cb => cb.checked = true);
                 document.getElementById(`text-status${tab}`).innerText = 'Todos';
             }
@@ -1768,6 +1864,19 @@
             const res = processCalendario(cachedApiData.pendentes, cachedApiData.historico, targetMonth, blocks, cycles, crops, varieties, statuses);
             lastProcessedData.cal = res;
             updateCalendarioView(res);
+        }
+
+        function applyFiltersEntregas() {
+            if (!cachedApiData) return;
+            const targetMonth = document.getElementById('startMonthEntregas')?.value || "";
+            const blocks = getSelectedNormalized('blockSearchEntregas');
+            const cycles = getSelectedNormalized('cycleSearchEntregas');
+            const crops = getSelectedNormalized('cropTypeEntregas');
+            const varieties = getSelectedNormalized('varietySearchEntregas');
+
+            const res = processEntregas(cachedApiData.historico, cachedApiData.pendentes, targetMonth, blocks, cycles, crops, varieties);
+            lastProcessedData.entregas = res;
+            updateEntregasView(res);
         }
 
         function applyFiltersRank() {
@@ -1982,6 +2091,49 @@
             });
             const avgCiclo = countCiclo > 0 ? Math.round(totalCiclo / countCiclo) : null;
             return { lista: list, totalP: tPlants, totalLotes: list.length, avgCiclo: avgCiclo };
+        }
+
+        // Lista os blocos que tiveram ao menos uma entrega registrada (aba "Colheita")
+        // dentro do período filtrado — responde "quais blocos estavam entregando nesse período".
+        function processEntregas(hist, pend, m, bF, cyF, crF, vF) {
+            let targetStart = null, targetEnd = null;
+            if (m) {
+                let startStr = m, endStr = m;
+                if (m.includes(' até ')) { [startStr, endStr] = m.split(' até '); }
+                else if (m.includes(' to ')) { [startStr, endStr] = m.split(' to '); }
+                else if (m.includes(' a ')) { [startStr, endStr] = m.split(' a '); }
+                targetStart = new Date(startStr + "T00:00:00");
+                targetEnd = new Date(endStr + "T23:59:59");
+            }
+            const agrup = {}; let totalUn = 0, totalKg = 0;
+            hist.forEach(r => {
+                const d = parseGoogleDate(r.data_entrega); if(!d) return;
+
+                if(bF.length > 0 && !bF.includes(normalizeStr(r.bloco))) return;
+                if(cyF.length > 0 && !cyF.includes(normalizeStr(r.ciclo))) return;
+                if(crF.length > 0 && !crF.includes(normalizeStr(r.cultura))) return;
+                if(vF.length > 0 && !vF.includes(normalizeStr(r.variedade_comercial))) return;
+
+                const isMatchDate = targetStart === null || (d >= targetStart && d <= targetEnd);
+                if(!isMatchDate) return;
+
+                const key = `${normalizeStr(r.bloco)}|${normalizeStr(r.ciclo)}|${normalizeStr(r.cultura)}`;
+                if(!agrup[key]){
+                    const bInfo = pend.find(p => normalizeStr(p.nome) === normalizeStr(r.bloco) && normalizeStr(p.ciclo) === normalizeStr(r.ciclo) && normalizeStr(p.cultura) === normalizeStr(r.cultura));
+                    agrup[key] = { bloco: r.bloco, ciclo: r.ciclo, cultura: r.cultura, variedades: new Set(), status: bInfo ? bInfo.status : "-", primeiraData: d, ultimaData: d, dias: new Set(), totalUn: 0, totalKg: 0 };
+                }
+                const item = agrup[key];
+                if(r.variedade_comercial) item.variedades.add(r.variedade_comercial);
+                if(d < item.primeiraData) item.primeiraData = d;
+                if(d > item.ultimaData) item.ultimaData = d;
+                item.dias.add(d.toISOString().split('T')[0]);
+                item.totalUn += r.qtd_cabecas; item.totalKg += r.peso_total_kg;
+                totalUn += r.qtd_cabecas; totalKg += r.peso_total_kg;
+            });
+            const list = Object.values(agrup)
+                .map(item => ({ ...item, diasEntregando: item.dias.size }))
+                .sort((a,b) => a.bloco.localeCompare(b.bloco, undefined, {numeric: true, sensitivity: 'base'}) || (a.ciclo || "").localeCompare(b.ciclo || "", undefined, {numeric: true}));
+            return { lista: list, totalBlocos: list.length, totalUn, totalKg };
         }
 
         function processRanking(hist, pend, m, bF, cyF, crF, vF, stats) {
@@ -2413,6 +2565,23 @@
             }
         }
 
+        function updateEntregasView(ent) {
+            safeSetText('entTotalBlocos', ent.totalBlocos.toLocaleString('pt-BR'));
+            safeSetText('entTotalUn', ent.totalUn.toLocaleString('pt-BR'));
+            safeSetText('entTotalKg', Math.round(ent.totalKg).toLocaleString('pt-BR'));
+            const tbody = document.getElementById('entTableBody');
+            if (tbody) {
+                tbody.innerHTML = ent.lista.length === 0 ? '<tr><td colspan="7" class="p-4 sm:p-6 text-center text-slate-400">Nenhum bloco entregou no período filtrado.</td></tr>' : '';
+                ent.lista.forEach(b => {
+                    const tr = document.createElement('tr'); const s = (b.status||"").toUpperCase();
+                    let sc = 'bg-slate-100 text-slate-600'; if(s.includes('ANDAMENTO')) sc='bg-amber-100 text-amber-700'; else if(s.includes('CONCLUÍDO')) sc='bg-emerald-100 text-emerald-700';
+                    const vars = Array.from(b.variedades).join(", ") || "Não inf.";
+                    tr.innerHTML = `<td class="p-4 sm:p-5"><div class="font-black text-slate-800">${b.bloco}</div><div class="text-[10px] text-slate-500">CICLO ${b.ciclo} • ${b.cultura} • <span class="text-brand-600 font-semibold">${vars}</span></div></td><td class="p-4 sm:p-5 text-center"><span class="px-3 py-1 rounded-lg text-[10px] font-black ${sc}">${b.status}</span></td><td class="p-4 sm:p-5 font-semibold text-slate-700 whitespace-nowrap">${b.primeiraData.toLocaleDateString('pt-BR')}</td><td class="p-4 sm:p-5 font-semibold text-slate-700 whitespace-nowrap">${b.ultimaData.toLocaleDateString('pt-BR')}</td><td class="p-4 sm:p-5 text-center font-bold text-slate-700">${b.diasEntregando}</td><td class="p-4 sm:p-5 text-right font-black text-slate-800 whitespace-nowrap">${b.totalUn.toLocaleString('pt-BR')} <span class="text-xs text-slate-400">un</span></td><td class="p-4 sm:p-5 text-right font-black text-slate-800 whitespace-nowrap">${Math.round(b.totalKg).toLocaleString('pt-BR')} <span class="text-xs text-slate-400">kg</span></td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
         function updateRankingView(list) {
             const topAprov = [...list].sort((a,b) => b.aprov - a.aprov || b.pMed - a.pMed);
             const worstAprov = [...list].sort((a,b) => a.aprov - b.aprov || a.pMed - b.pMed);
@@ -2648,6 +2817,9 @@
             } else if (!document.getElementById('viewCalendario').classList.contains('hidden')) {
                 activeTab = 'Cal';
                 reportTitle = 'Calendário de Lotes e Plantios';
+            } else if (!document.getElementById('viewEntregas').classList.contains('hidden')) {
+                activeTab = 'Entregas';
+                reportTitle = 'Blocos Entregando no Período Filtrado';
             } else if (!document.getElementById('viewRanking').classList.contains('hidden')) {
                 activeTab = 'Rank';
                 reportTitle = 'Ranking de Performance Operacional';
@@ -2883,6 +3055,52 @@
                             <th class="ind-right" style="width: 12%">Plantas</th>
                         </tr>
                         ${rows || '<tr><td colspan="6" class="ind-center">Nenhum plantio encontrado.</td></tr>'}
+                    </table>`;
+                } else if (activeTab === 'Entregas') {
+                    const ent = lastProcessedData.entregas;
+                    summaryHtml = `
+                        <table class="ind-table">
+                            <tr class="ind-title-row"><td colspan="3">2. Resumo do Período</td></tr>
+                            <tr class="ind-header ind-center">
+                                <td>Blocos Entregando</td>
+                                <td>Total Entregue (Un)</td>
+                                <td>Total Entregue (Kg)</td>
+                            </tr>
+                            <tr class="ind-center ind-bold" style="font-size: 10pt;">
+                                <td>${ent.totalBlocos.toLocaleString('pt-BR')}</td>
+                                <td>${ent.totalUn.toLocaleString('pt-BR')}</td>
+                                <td>${Math.round(ent.totalKg).toLocaleString('pt-BR')}</td>
+                            </tr>
+                        </table>
+                    `;
+
+                    let rows = ent.lista.map(b => {
+                        const vars = Array.from(b.variedades).join(", ") || "Não inf.";
+                        return `
+                        <tr>
+                            <td><b>${b.bloco}</b> - Ciclo ${b.ciclo}<br><span style="font-size:7pt;color:#555">${b.cultura} (${vars})</span></td>
+                            <td class="ind-center">${b.status}</td>
+                            <td class="ind-center">${b.primeiraData.toLocaleDateString('pt-BR')}</td>
+                            <td class="ind-center">${b.ultimaData.toLocaleDateString('pt-BR')}</td>
+                            <td class="ind-center">${b.diasEntregando}</td>
+                            <td class="ind-right ind-bold">${b.totalUn.toLocaleString('pt-BR')}</td>
+                            <td class="ind-right ind-bold">${Math.round(b.totalKg).toLocaleString('pt-BR')}</td>
+                        </tr>`;
+                    }).join('');
+
+                    detailHtml = `
+                    <table class="ind-table">
+                        <tr class="ind-title-row"><td colspan="7">3. Blocos que Entregaram no Período</td></tr>
+                        <tr class="ind-header">
+                            <th style="width: 28%">Bloco / Especificação</th>
+                            <th class="ind-center" style="width: 14%">Status</th>
+                            <th class="ind-center" style="width: 13%">1ª Entrega</th>
+                            <th class="ind-center" style="width: 13%">Última Entrega</th>
+                            <th class="ind-center" style="width: 10%">Dias</th>
+                            <th class="ind-right" style="width: 11%">Total Un</th>
+                            <th class="ind-right" style="width: 11%">Total Kg</th>
+                        </tr>
+                        ${rows || '<tr><td colspan="7" class="ind-center">Nenhum bloco entregou no período filtrado.</td></tr>'}
                     </table>`;
                 } else if (activeTab === 'Rank') {
                     const list = lastProcessedData.rank;
